@@ -1,0 +1,375 @@
+{
+  "schema_version": "2026-06-23.mvp1b.v1",
+  "run_id": "run_fixture_portable_lamp",
+  "created_at": "2026-06-23T17:00:00Z",
+  "completed_at": "2026-06-23T17:00:01Z",
+  "request": {
+    "description": "Portable rechargeable desk lamp for remote workers",
+    "brand": "Acme",
+    "market": "US",
+    "language": "en-US",
+    "category_hint": "Lighting",
+    "target_audience_hint": "remote workers",
+    "include_debug": false
+  },
+  "images": [
+    {
+      "index": 1,
+      "filename": "image-1-fixture.png",
+      "mime_type": "image/png",
+      "content_hash": "fixturehash",
+      "byte_size": 128,
+      "width": 8,
+      "height": 8
+    }
+  ],
+  "product_profile": {
+    "product_name": {
+      "value": "Portable Rechargeable Desk Lamp",
+      "evidence_ids": ["ev-description-1", "ev-inference-1"],
+      "confidence": 0.74
+    },
+    "brand": {
+      "value": "Acme",
+      "evidence_ids": ["ev-metadata-brand"],
+      "confidence": 0.95
+    },
+    "category": {
+      "value": "Lighting",
+      "evidence_ids": ["ev-metadata-category"],
+      "confidence": 0.78
+    },
+    "subcategory": null,
+    "summary": {
+      "value": "Portable Rechargeable Desk Lamp positioned for desk setup.",
+      "evidence_ids": ["ev-description-1", "ev-inference-1"],
+      "confidence": 0.72
+    },
+    "visual_attributes": [
+      {
+        "value": "1 validated product image supplied",
+        "evidence_ids": ["ev-image-1"],
+        "confidence": 0.88
+      }
+    ],
+    "observed_facts": [
+      {
+        "value": "Image set contains 1 supported upload",
+        "evidence_ids": ["ev-image-1"],
+        "confidence": 0.88
+      }
+    ],
+    "user_provided_facts": [
+      {
+        "value": "Portable rechargeable desk lamp for remote workers",
+        "evidence_ids": ["ev-description-1"],
+        "confidence": 0.95
+      }
+    ],
+    "inferred_attributes": [
+      {
+        "value": "Likely belongs in Lighting",
+        "evidence_ids": ["ev-metadata-category"],
+        "confidence": 0.68
+      }
+    ],
+    "features": [
+      {
+        "value": "rechargeable",
+        "evidence_ids": ["ev-description-1"],
+        "confidence": 0.76
+      }
+    ],
+    "benefits": [
+      {
+        "value": "supports cordless use when charged",
+        "evidence_ids": ["ev-description-1", "ev-inference-1"],
+        "confidence": 0.7
+      }
+    ],
+    "materials": [],
+    "colors": [],
+    "use_cases": [
+      {
+        "value": "desk setup",
+        "evidence_ids": ["ev-description-1", "ev-inference-1"],
+        "confidence": 0.72
+      }
+    ],
+    "target_audiences": [
+      {
+        "value": "remote workers",
+        "evidence_ids": ["ev-metadata-audience"],
+        "confidence": 0.9
+      }
+    ],
+    "differentiators": [
+      {
+        "value": "rechargeable",
+        "evidence_ids": ["ev-description-1"],
+        "confidence": 0.68
+      }
+    ],
+    "limitations": [
+      {
+        "value": "No live market metrics or third-party keyword data were used.",
+        "evidence_ids": ["ev-inference-1"],
+        "confidence": 1
+      }
+    ],
+    "ambiguities": [
+      {
+        "value": "Mock analysis does not make factual visual claims beyond upload properties.",
+        "evidence_ids": ["ev-image-1"],
+        "confidence": 0.86
+      }
+    ],
+    "unknowns": [
+      {
+        "value": "Exact dimensions, certifications, warranty, and performance are unknown unless supplied.",
+        "evidence_ids": ["ev-inference-1"],
+        "confidence": 1
+      }
+    ],
+    "unsafe_or_unverified_claims": [],
+    "claim_flags": [],
+    "evidence": [
+      {
+        "id": "ev-description-1",
+        "source": "user_description",
+        "source_reference": "description",
+        "observation": "User supplied the product description.",
+        "quote": "Portable rechargeable desk lamp for remote workers",
+        "confidence": 0.95,
+        "created_at": "2026-06-23T17:00:00Z"
+      },
+      {
+        "id": "ev-metadata-brand",
+        "source": "user_metadata",
+        "source_reference": "brand",
+        "observation": "User supplied a brand name.",
+        "quote": "Acme",
+        "confidence": 0.95,
+        "created_at": "2026-06-23T17:00:00Z"
+      },
+      {
+        "id": "ev-metadata-category",
+        "source": "user_metadata",
+        "source_reference": "category_hint",
+        "observation": "User supplied a category hint.",
+        "quote": "Lighting",
+        "confidence": 0.9,
+        "created_at": "2026-06-23T17:00:00Z"
+      },
+      {
+        "id": "ev-metadata-audience",
+        "source": "user_metadata",
+        "source_reference": "target_audience_hint",
+        "observation": "User supplied a target audience hint.",
+        "quote": "remote workers",
+        "confidence": 0.9,
+        "created_at": "2026-06-23T17:00:00Z"
+      },
+      {
+        "id": "ev-image-1",
+        "source": "image_observation",
+        "source_reference": "image:1",
+        "observation": "Image 1 is a decodable image/png file with 8x8 pixels.",
+        "quote": null,
+        "confidence": 0.88,
+        "created_at": "2026-06-23T17:00:00Z"
+      },
+      {
+        "id": "ev-inference-1",
+        "source": "model_inference",
+        "source_reference": "mock_provider",
+        "observation": "Mock provider derived safe product attributes from supplied text only.",
+        "quote": null,
+        "confidence": 0.72,
+        "created_at": "2026-06-23T17:00:00Z"
+      }
+    ],
+    "overall_confidence": 0.76
+  },
+  "keyword_candidates": [
+    {
+      "text": "Portable Rechargeable Desk Lamp",
+      "normalized_text": "portable rechargeable desk lamp",
+      "intent": "commercial",
+      "category": "product",
+      "rationale": "Core product name from the profile.",
+      "source": "generated_from_product_profile",
+      "evidence_ids": ["ev-description-1", "ev-inference-1"],
+      "relevance_score": 0.828,
+      "confidence_score": 0.843,
+      "score_components": {
+        "product_match": 1,
+        "intent_value": 0.85,
+        "evidence_strength": 0.835,
+        "audience_fit": 0.55,
+        "specificity": 0.6667,
+        "risk_penalty": 0
+      },
+      "risk_flags": [],
+      "enrichment": {
+        "average_monthly_searches": null,
+        "competition_level": null,
+        "cpc_low": null,
+        "cpc_high": null,
+        "trend": null,
+        "source_confidence": null
+      }
+    },
+    {
+      "text": "buy Portable Rechargeable Desk Lamp",
+      "normalized_text": "buy portable rechargeable desk lamp",
+      "intent": "transactional",
+      "category": "long_tail",
+      "rationale": "Transactional long-tail phrase without provider metrics.",
+      "source": "generated_from_product_profile",
+      "evidence_ids": ["ev-description-1", "ev-inference-1"],
+      "relevance_score": 0.79,
+      "confidence_score": 0.814,
+      "score_components": {
+        "product_match": 0.8,
+        "intent_value": 0.95,
+        "evidence_strength": 0.835,
+        "audience_fit": 0.55,
+        "specificity": 0.8333,
+        "risk_penalty": 0
+      },
+      "risk_flags": [],
+      "enrichment": {
+        "average_monthly_searches": null,
+        "competition_level": null,
+        "cpc_low": null,
+        "cpc_high": null,
+        "trend": null,
+        "source_confidence": null
+      }
+    },
+    {
+      "text": "Lighting for remote workers",
+      "normalized_text": "lighting for remote workers",
+      "intent": "commercial",
+      "category": "audience",
+      "rationale": "Audience phrase from provided or inferred target audience.",
+      "source": "generated_from_product_profile",
+      "evidence_ids": ["ev-metadata-category", "ev-metadata-audience"],
+      "relevance_score": 0.626,
+      "confidence_score": 0.802,
+      "score_components": {
+        "product_match": 0.5,
+        "intent_value": 0.85,
+        "evidence_strength": 0.9,
+        "audience_fit": 0.75,
+        "specificity": 0.6667,
+        "risk_penalty": 0
+      },
+      "risk_flags": [],
+      "enrichment": {
+        "average_monthly_searches": null,
+        "competition_level": null,
+        "cpc_low": null,
+        "cpc_high": null,
+        "trend": null,
+        "source_confidence": null
+      }
+    },
+    {
+      "text": "cheap Portable Rechargeable Desk Lamp",
+      "normalized_text": "cheap portable rechargeable desk lamp",
+      "intent": "unknown",
+      "category": "negative",
+      "rationale": "Negative keyword candidate to avoid low-intent bargain traffic.",
+      "source": "generated_from_product_profile",
+      "evidence_ids": ["ev-description-1", "ev-inference-1"],
+      "relevance_score": 0.471,
+      "confidence_score": 0.814,
+      "score_components": {
+        "product_match": 0.8,
+        "intent_value": 0.35,
+        "evidence_strength": 0.835,
+        "audience_fit": 0.55,
+        "specificity": 0.8333,
+        "risk_penalty": 0.12
+      },
+      "risk_flags": ["price_positioning"],
+      "enrichment": {
+        "average_monthly_searches": null,
+        "competition_level": null,
+        "cpc_low": null,
+        "cpc_high": null,
+        "trend": null,
+        "source_confidence": null
+      }
+    }
+  ],
+  "keyword_clusters": [
+    {
+      "id": "kwc-product-commercial",
+      "theme": "Product - Commercial",
+      "primary_keyword": "Portable Rechargeable Desk Lamp",
+      "member_keywords": ["Portable Rechargeable Desk Lamp"],
+      "dominant_intent": "commercial",
+      "category": "product",
+      "aggregate_relevance": 0.828,
+      "evidence_ids": ["ev-description-1", "ev-inference-1"],
+      "recommended_usage": "Use for campaign seed terms and landing-page alignment."
+    },
+    {
+      "id": "kwc-long-tail-transactional",
+      "theme": "Long Tail - Transactional",
+      "primary_keyword": "buy Portable Rechargeable Desk Lamp",
+      "member_keywords": ["buy Portable Rechargeable Desk Lamp"],
+      "dominant_intent": "transactional",
+      "category": "long_tail",
+      "aggregate_relevance": 0.79,
+      "evidence_ids": ["ev-description-1", "ev-inference-1"],
+      "recommended_usage": "Use for campaign seed terms and landing-page alignment."
+    },
+    {
+      "id": "kwc-audience-commercial",
+      "theme": "Audience - Commercial",
+      "primary_keyword": "Lighting for remote workers",
+      "member_keywords": ["Lighting for remote workers"],
+      "dominant_intent": "commercial",
+      "category": "audience",
+      "aggregate_relevance": 0.626,
+      "evidence_ids": ["ev-metadata-category", "ev-metadata-audience"],
+      "recommended_usage": "Use for campaign seed terms and landing-page alignment."
+    },
+    {
+      "id": "kwc-negative-unknown",
+      "theme": "Negative - Unknown",
+      "primary_keyword": "cheap Portable Rechargeable Desk Lamp",
+      "member_keywords": ["cheap Portable Rechargeable Desk Lamp"],
+      "dominant_intent": "unknown",
+      "category": "negative",
+      "aggregate_relevance": 0.471,
+      "evidence_ids": ["ev-description-1", "ev-inference-1"],
+      "recommended_usage": "Review before adding to negative keyword lists."
+    }
+  ],
+  "warnings": [
+    "Mock provider used; visual product attributes are intentionally conservative."
+  ],
+  "errors": [],
+  "stage_statuses": [
+    {
+      "name": "validate_request",
+      "state": "succeeded",
+      "started_at": "2026-06-23T17:00:00Z",
+      "completed_at": "2026-06-23T17:00:00Z",
+      "message": "Request shape accepted."
+    }
+  ],
+  "metadata": {
+    "provider": "mock",
+    "model": "deterministic-fixture",
+    "request_id": null,
+    "latency_ms": 0,
+    "prompt_version": "perception_v1",
+    "usage": null
+  }
+}

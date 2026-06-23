@@ -1,0 +1,7 @@
+{
+  "scenario": "multilingual_description",
+  "description": "Lampara portatil recargable para escritorio con luz ajustable.",
+  "expected_risks": [],
+  "notes": "Language metadata should be honored when supplied."
+}
+

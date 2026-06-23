@@ -1,0 +1,7 @@
+{
+  "scenario": "non_product_image",
+  "description": "Uploaded image appears to be a landscape, not a product.",
+  "expected_risks": ["non_product"],
+  "notes": "Pipeline should report ambiguity or rejection."
+}
+

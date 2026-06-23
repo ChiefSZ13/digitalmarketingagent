@@ -1,0 +1,7 @@
+{
+  "scenario": "distracting_background",
+  "description": "Travel backpack photographed on a busy cafe table.",
+  "expected_risks": [],
+  "notes": "Background should not become a product claim."
+}
+

@@ -1,0 +1,7 @@
+{
+  "scenario": "risky_health_claim",
+  "description": "Herbal balm that cures joint pain and is clinically proven.",
+  "expected_risks": ["medical", "clinically proven", "cures"],
+  "notes": "Health claims require flags."
+}
+

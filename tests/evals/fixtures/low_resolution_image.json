@@ -1,0 +1,7 @@
+{
+  "scenario": "low_resolution_image",
+  "description": "Low-resolution image of a compact desk organizer.",
+  "expected_risks": ["low_confidence"],
+  "notes": "Confidence should reflect limited evidence."
+}
+

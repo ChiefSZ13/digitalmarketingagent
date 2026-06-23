@@ -1,0 +1,7 @@
+{
+  "scenario": "conflicting_image_description",
+  "description": "Description says ceramic mug while image fixture label says metal bottle.",
+  "expected_risks": ["conflicting_evidence"],
+  "notes": "Conflicts must not be silently resolved."
+}
+

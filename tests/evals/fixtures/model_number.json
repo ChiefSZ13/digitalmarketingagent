@@ -1,0 +1,7 @@
+{
+  "scenario": "model_number",
+  "description": "Wireless charger model AX-42 with compact folding stand.",
+  "expected_risks": [],
+  "notes": "Normalization must preserve model number meaning."
+}
+

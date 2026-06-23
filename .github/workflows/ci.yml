@@ -1,0 +1,46 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - name: Sync API
+        run: cd apps/api && uv sync --all-extras --dev
+      - name: Lint API
+        run: cd apps/api && uv run ruff check src tests
+      - name: Typecheck API
+        run: cd apps/api && uv run pyright
+      - name: Test API
+        run: cd apps/api && uv run pytest
+      - name: Export OpenAPI
+        run: cd apps/api && uv run python ../../scripts/export_schema.py
+
+  frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.4
+      - name: Install Web
+        run: cd apps/web && pnpm install
+      - name: Lint Web
+        run: cd apps/web && pnpm lint
+      - name: Typecheck Web
+        run: cd apps/web && pnpm typecheck
+      - name: Test Web
+        run: cd apps/web && pnpm test
+      - name: Install Playwright
+        run: cd apps/web && pnpm exec playwright install --with-deps chromium
+      - name: E2E
+        run: cd apps/web && pnpm test:e2e
+

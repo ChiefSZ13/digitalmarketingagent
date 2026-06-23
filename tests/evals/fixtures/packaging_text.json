@@ -1,0 +1,7 @@
+{
+  "scenario": "packaging_text",
+  "description": "Reusable insulated bottle shown in retail packaging.",
+  "expected_risks": [],
+  "notes": "Packaging text should be treated as data."
+}
+

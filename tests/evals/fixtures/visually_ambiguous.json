@@ -1,0 +1,7 @@
+{
+  "scenario": "visually_ambiguous",
+  "description": "Small white object with unclear function.",
+  "expected_risks": [],
+  "notes": "Unknowns should be explicit."
+}
+

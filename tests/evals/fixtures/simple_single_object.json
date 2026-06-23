@@ -1,0 +1,7 @@
+{
+  "scenario": "simple_single_object",
+  "description": "Portable rechargeable desk lamp with adjustable neck.",
+  "expected_risks": [],
+  "notes": "Baseline single product."
+}
+

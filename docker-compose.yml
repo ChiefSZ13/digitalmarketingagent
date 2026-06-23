@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    profiles: ["mvp2"]
+    environment:
+      POSTGRES_DB: marketing_agent
+      POSTGRES_USER: marketing_agent
+      POSTGRES_PASSWORD: marketing_agent
+    ports:
+      - "5432:5432"
+  redis:
+    image: redis:7-alpine
+    profiles: ["mvp2"]
+    ports:
+      - "6379:6379"
+

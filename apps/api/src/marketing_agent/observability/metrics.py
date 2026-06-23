@@ -1,0 +1,11 @@
+"""In-process metric names for future instrumentation."""
+
+REQUEST_COUNT = "request_count"
+SUCCESS_COUNT = "success_count"
+FAILURE_COUNT = "failure_count"
+STAGE_LATENCY = "stage_latency"
+PROVIDER_LATENCY = "provider_latency"
+VALIDATION_FAILURES = "validation_failures"
+RETRIES = "retries"
+GENERATED_KEYWORD_COUNT = "generated_keyword_count"
+DUPLICATE_REMOVAL_COUNT = "duplicate_removal_count"
