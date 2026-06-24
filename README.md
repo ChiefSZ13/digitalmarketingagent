@@ -38,6 +38,7 @@ APP_HOST=127.0.0.1
 APP_PORT=8010
 WEB_HOST=127.0.0.1
 WEB_PORT=3101
+CORS_ALLOWED_ORIGINS=http://127.0.0.1:3101,http://localhost:3101
 APP_ACCESS_KEY=choose_a_long_random_value
 RATE_LIMIT_REQUESTS=20
 RATE_LIMIT_WINDOW_SECONDS=3600
@@ -81,6 +82,15 @@ core product model for broad sales and price discovery. For example, a specific
 variant such as `Nike Air Jordan 5 Retro University Blue` should produce
 `Nike Air Jordan 5`. Deterministic cleanup remains only as a fallback when the
 model cannot provide the field; the raw human description is last resort.
+
+For production, set `CORS_ALLOWED_ORIGINS` to the exact frontend origin. For
+example, the Render backend for the Vercel app should use:
+
+```bash
+CORS_ALLOWED_ORIGINS=https://digitalmarketingagent.vercel.app
+```
+
+Do not include a trailing slash.
 
 `APP_ACCESS_KEY` protects the API with an `X-App-Access-Key` header when set.
 The browser form includes an Access key field and sends that value only with the
