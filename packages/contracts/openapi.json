@@ -1250,6 +1250,16 @@
               }
             ]
           },
+          "marketplace_search_query": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/EvidenceLinkedText"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "summary": {
             "$ref": "#/components/schemas/EvidenceLinkedText"
           },

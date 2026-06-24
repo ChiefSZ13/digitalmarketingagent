@@ -37,6 +37,7 @@ export const productProfileSchema = z.object({
   brand: evidenceLinkedTextSchema.nullable(),
   category: evidenceLinkedTextSchema.nullable(),
   subcategory: evidenceLinkedTextSchema.nullable(),
+  marketplace_search_query: evidenceLinkedTextSchema.nullable(),
   summary: evidenceLinkedTextSchema,
   visual_attributes: z.array(evidenceLinkedTextSchema),
   observed_facts: z.array(evidenceLinkedTextSchema),

@@ -12,6 +12,7 @@ from marketing_agent.domain.ports.marketplace_data_provider import (
     MarketplaceDataProviderRequest,
     MarketplaceDataProviderResult,
 )
+from marketing_agent.domain.services.marketplace_query import build_marketplace_search_query
 
 
 class MockMarketplaceDataProvider:
@@ -24,8 +25,10 @@ class MockMarketplaceDataProvider:
             if request.product_profile.category
             else "Product"
         )
-        market = request.request.market or "US"
-        query = f"{product_name} {market}".strip()
+        query = build_marketplace_search_query(
+            request=request.request,
+            profile=request.product_profile,
+        )
         now = datetime.now(UTC)
         evidence = [
             EvidenceRecord(
@@ -65,7 +68,7 @@ class MockMarketplaceDataProvider:
             offer_count,
             review_count,
         ) in enumerate(platforms, start=1):
-            search_phrase = f"{product_name} {market} {platform}".strip()
+            search_phrase = f"{query} {platform}".strip()
             rankings.append(
                 MarketplacePlatformEstimate(
                     rank=rank,

@@ -24,6 +24,7 @@ class ProductProfile(BaseModel):
     brand: EvidenceLinkedText | None = None
     category: EvidenceLinkedText | None = None
     subcategory: EvidenceLinkedText | None = None
+    marketplace_search_query: EvidenceLinkedText | None = None
     summary: EvidenceLinkedText
     visual_attributes: list[EvidenceLinkedText] = Field(default_factory=_linked_text_list)
     observed_facts: list[EvidenceLinkedText] = Field(default_factory=_linked_text_list)

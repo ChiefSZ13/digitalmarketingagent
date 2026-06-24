@@ -22,6 +22,7 @@ from marketing_agent.domain.ports.marketplace_data_provider import (
     MarketplaceDataProviderRequest,
     MarketplaceDataProviderResult,
 )
+from marketing_agent.domain.services.marketplace_query import build_marketplace_search_query
 
 SERPAPI_ENDPOINT = "https://serpapi.com/search.json"
 
@@ -268,12 +269,10 @@ def _score_group(group: list[_ShoppingOffer]) -> float:
 
 
 def _build_query(request: MarketplaceDataProviderRequest) -> str:
-    parts = [_product_name(request)]
-    if request.request.brand:
-        parts.append(request.request.brand)
-    if request.request.category_hint:
-        parts.append(request.request.category_hint)
-    return " ".join(dict.fromkeys(part for part in parts if part)).strip()
+    return build_marketplace_search_query(
+        request=request.request,
+        profile=request.product_profile,
+    )
 
 
 def _product_name(request: MarketplaceDataProviderRequest) -> str:

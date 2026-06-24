@@ -75,6 +75,12 @@ The live provider fills `marketplace_snapshot` with observed marketplace/source
 names, offer counts, review counts, price ranges, source URLs, retrieval time,
 and evidence IDs. It does not claim true cross-platform total units sold unless
 the provider result explicitly exposes a sold/bought signal for a listing.
+Its search query comes from the normalized product profile field
+`marketplace_search_query`, which the perception model is asked to set to the
+core product model for broad sales and price discovery. For example, a specific
+variant such as `Nike Air Jordan 5 Retro University Blue` should produce
+`Nike Air Jordan 5`. Deterministic cleanup remains only as a fallback when the
+model cannot provide the field; the raw human description is last resort.
 
 `APP_ACCESS_KEY` protects the API with an `X-App-Access-Key` header when set.
 The browser form includes an Access key field and sends that value only with the

@@ -17,6 +17,8 @@ def _create_test_app(tmp_path: Path, **settings_overrides: Any) -> FastAPI:
     settings_values: dict[str, Any] = {
         "artifact_dir": tmp_path / "runs",
         "perception_provider": "mock",
+        "marketplace_data_provider": "mock",
+        "serpapi_api_key": None,
         "app_access_key": None,
     }
     settings_values.update(settings_overrides)

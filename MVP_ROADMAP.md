@@ -37,6 +37,7 @@ Progress:
 - Added a provider abstraction so different market-data vendors can fill the same JSON fields.
 - Added a mock marketplace provider for local development, CI, and frontend fixture mode.
 - Added a SerpAPI Google Shopping provider for live observed offer/source/price/review data.
+- Marketplace provider queries now prefer the model-generated `marketplace_search_query` field, which is intended to contain the normalized core product model instead of raw human descriptions or narrow variant descriptors.
 - Added marketplace evidence records so provider observations can be traced.
 - Added frontend rendering for platform rankings, observed offer/review signals, price ranges, methodology, limitations, and non-live data warnings.
 

@@ -18,6 +18,7 @@ def validate_profile_evidence(profile: ProductProfile) -> None:
         "brand",
         "category",
         "subcategory",
+        "marketplace_search_query",
         "summary",
     ):
         value = getattr(profile, field_name)
