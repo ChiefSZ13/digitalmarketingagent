@@ -1,0 +1,1 @@
+"""Marketplace data provider adapters."""

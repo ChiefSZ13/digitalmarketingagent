@@ -15,6 +15,12 @@ from marketing_agent.config import get_settings
 from marketing_agent.domain.models.run import ProductAnalysisRequest
 from marketing_agent.infrastructure.ai.mock_perception_provider import MockPerceptionProvider
 from marketing_agent.infrastructure.ai.openai_perception_provider import OpenAIPerceptionProvider
+from marketing_agent.infrastructure.marketplace.mock_marketplace_data_provider import (
+    MockMarketplaceDataProvider,
+)
+from marketing_agent.infrastructure.marketplace.serpapi_marketplace_data_provider import (
+    SerpApiMarketplaceDataProvider,
+)
 from marketing_agent.infrastructure.media.image_validation import content_type_from_path
 from marketing_agent.infrastructure.persistence.local_artifact_repository import (
     LocalArtifactRepository,
@@ -80,9 +86,23 @@ async def _analyze(
     )
     if settings.perception_provider.lower() == "openai" and not settings.openai_api_key:
         raise typer.BadParameter("OPENAI_API_KEY is required when PERCEPTION_PROVIDER=openai")
+    marketplace_provider = (
+        SerpApiMarketplaceDataProvider(
+            api_key=settings.serpapi_api_key or "",
+            timeout_seconds=settings.marketplace_timeout_seconds,
+            location=settings.serpapi_location,
+        )
+        if settings.marketplace_data_provider.lower() == "serpapi"
+        else MockMarketplaceDataProvider()
+    )
+    if settings.marketplace_data_provider.lower() == "serpapi" and not settings.serpapi_api_key:
+        raise typer.BadParameter(
+            "SERPAPI_API_KEY is required when MARKETPLACE_DATA_PROVIDER=serpapi"
+        )
     pipeline = PerceptionPipeline(
         settings=settings,
         provider=provider,
+        marketplace_provider=marketplace_provider,
         repository=LocalArtifactRepository(settings.artifact_dir),
     )
     command = AnalyzeProductCommand(

@@ -7,6 +7,7 @@ import {
   type KeywordFilterState,
 } from "@/components/keyword-filters";
 import { KeywordTable } from "@/components/keyword-table";
+import { MarketplaceSnapshotPanel } from "@/components/marketplace-snapshot-panel";
 import { ProductProfilePanel } from "@/components/product-profile-panel";
 import { perceptionRunSchema } from "@/lib/schemas";
 import fixture from "../public/fixtures/mock-run.json";
@@ -47,6 +48,15 @@ describe("result rendering", () => {
     ).not.toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /inspect/i }));
     expect(screen.getByText(/Negative keyword candidate/i)).toBeInTheDocument();
+  });
+
+  it("renders marketplace snapshot estimates", () => {
+    render(<MarketplaceSnapshotPanel snapshot={run.marketplace_snapshot} />);
+    expect(screen.getByText("Marketplace Snapshot")).toBeInTheDocument();
+    expect(screen.getByText(/Mock or non-live data/i)).toBeInTheDocument();
+    expect(screen.getAllByText("Amazon")[0]).toBeInTheDocument();
+    expect(screen.getByText("AliExpress")).toBeInTheDocument();
+    expect(screen.getByText("$19 - $40")).toBeInTheDocument();
   });
 
   it("renders keyword filters and emits changes", async () => {

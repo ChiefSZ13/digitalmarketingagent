@@ -8,6 +8,7 @@ from fastapi.responses import JSONResponse
 from pydantic import BaseModel, ConfigDict, Field
 from starlette import status
 
+from marketing_agent.domain.ports.marketplace_data_provider import MarketplaceDataProviderError
 from marketing_agent.infrastructure.ai.openai_perception_provider import OpenAIProviderError
 from marketing_agent.infrastructure.media.image_validation import ImageValidationError
 
@@ -115,6 +116,18 @@ async def provider_exception_handler(request: Request, exc: OpenAIProviderError)
         detail=str(exc),
         status_code=status.HTTP_502_BAD_GATEWAY,
         type_="https://example.local/errors/provider-failure",
+    )
+
+
+async def marketplace_provider_exception_handler(
+    request: Request, exc: MarketplaceDataProviderError
+) -> JSONResponse:
+    return problem_response(
+        request,
+        title="Marketplace provider failure",
+        detail=str(exc),
+        status_code=status.HTTP_502_BAD_GATEWAY,
+        type_="https://example.local/errors/marketplace-provider-failure",
     )
 
 

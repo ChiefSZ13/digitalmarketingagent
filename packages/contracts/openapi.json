@@ -461,7 +461,8 @@
           "user_metadata",
           "image_observation",
           "model_inference",
-          "keyword_provider"
+          "keyword_provider",
+          "marketplace_provider"
         ],
         "title": "EvidenceSource"
       },
@@ -698,12 +699,348 @@
         ],
         "title": "KeywordIntent"
       },
+      "MarketplacePlatformEstimate": {
+        "properties": {
+          "rank": {
+            "type": "integer",
+            "maximum": 10.0,
+            "minimum": 1.0,
+            "title": "Rank"
+          },
+          "platform": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Platform"
+          },
+          "platform_type": {
+            "type": "string",
+            "pattern": "^(marketplace|retailer|social_commerce|specialty|brand_store|other)$",
+            "title": "Platform Type"
+          },
+          "data_source": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Data Source"
+          },
+          "estimated_sales_potential_score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Estimated Sales Potential Score"
+          },
+          "observed_offer_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed Offer Count"
+          },
+          "observed_review_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed Review Count"
+          },
+          "observed_units_sold": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed Units Sold"
+          },
+          "observed_sales_signal": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed Sales Signal"
+          },
+          "sales_rank_basis": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Sales Rank Basis"
+          },
+          "listing_search_phrase": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Listing Search Phrase"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Evidence Ids"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "risk_flags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Risk Flags"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "rank",
+          "platform",
+          "platform_type",
+          "data_source",
+          "estimated_sales_potential_score",
+          "sales_rank_basis",
+          "listing_search_phrase",
+          "evidence_ids",
+          "confidence"
+        ],
+        "title": "MarketplacePlatformEstimate"
+      },
+      "MarketplacePriceEstimate": {
+        "properties": {
+          "platform": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Platform"
+          },
+          "data_source": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Data Source"
+          },
+          "price_low": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Low"
+          },
+          "price_high": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price High"
+          },
+          "currency": {
+            "type": "string",
+            "maxLength": 3,
+            "minLength": 3,
+            "title": "Currency",
+            "default": "USD"
+          },
+          "observed_offer_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed Offer Count"
+          },
+          "price_basis": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Price Basis"
+          },
+          "listing_search_phrase": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Listing Search Phrase"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Evidence Ids"
+          },
+          "confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence"
+          },
+          "risk_flags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Risk Flags"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "platform",
+          "data_source",
+          "price_basis",
+          "listing_search_phrase",
+          "evidence_ids",
+          "confidence"
+        ],
+        "title": "MarketplacePriceEstimate"
+      },
+      "MarketplaceSnapshot": {
+        "properties": {
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Title"
+          },
+          "summary": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Summary"
+          },
+          "source_provider": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Source Provider"
+          },
+          "source_query": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Source Query"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Retrieved At"
+          },
+          "is_live_data": {
+            "type": "boolean",
+            "title": "Is Live Data"
+          },
+          "methodology": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Methodology"
+          },
+          "limitations": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Limitations"
+          },
+          "platform_rankings": {
+            "items": {
+              "$ref": "#/components/schemas/MarketplacePlatformEstimate"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Platform Rankings"
+          },
+          "price_estimates": {
+            "items": {
+              "$ref": "#/components/schemas/MarketplacePriceEstimate"
+            },
+            "type": "array",
+            "maxItems": 10,
+            "minItems": 1,
+            "title": "Price Estimates"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "overall_confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Overall Confidence"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title",
+          "summary",
+          "source_provider",
+          "source_query",
+          "is_live_data",
+          "methodology",
+          "limitations",
+          "platform_rankings",
+          "price_estimates",
+          "overall_confidence"
+        ],
+        "title": "MarketplaceSnapshot"
+      },
       "PerceptionRun": {
         "properties": {
           "schema_version": {
             "type": "string",
             "title": "Schema Version",
-            "default": "2026-06-23.mvp1b.v1"
+            "default": "2026-06-24.marketplace_snapshot.v1"
           },
           "run_id": {
             "type": "string",
@@ -738,6 +1075,9 @@
           },
           "product_profile": {
             "$ref": "#/components/schemas/ProductProfile"
+          },
+          "marketplace_snapshot": {
+            "$ref": "#/components/schemas/MarketplaceSnapshot"
           },
           "keyword_candidates": {
             "items": {
@@ -785,6 +1125,7 @@
           "request",
           "images",
           "product_profile",
+          "marketplace_snapshot",
           "keyword_candidates",
           "keyword_clusters",
           "stage_statuses",

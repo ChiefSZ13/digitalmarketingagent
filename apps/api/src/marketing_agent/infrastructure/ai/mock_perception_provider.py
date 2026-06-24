@@ -242,7 +242,7 @@ class MockPerceptionProvider:
                 usage=None,
             ),
             warnings=[
-                "Mock provider used; visual product attributes are intentionally conservative."
+                "Mock provider used; visual product attributes are intentionally conservative.",
             ],
         )
 

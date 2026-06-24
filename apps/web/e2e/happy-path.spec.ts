@@ -34,6 +34,10 @@ test("fixture-backed analysis flow", async ({ page }) => {
   await page.goto("/");
   await submitFixtureAnalysis(page);
   await expectPageToFitViewport(page);
+  await expect(
+    page.getByRole("heading", { name: "Marketplace Snapshot" }),
+  ).toBeVisible();
+  await expect(page.getByText("Amazon").first()).toBeVisible();
   await page
     .getByRole("combobox", { name: /^Category$/ })
     .selectOption("negative");

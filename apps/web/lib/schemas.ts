@@ -99,6 +99,54 @@ export const keywordClusterSchema = z.object({
   recommended_usage: z.string(),
 });
 
+export const marketplacePlatformEstimateSchema = z.object({
+  rank: z.number(),
+  platform: z.string(),
+  platform_type: z.string(),
+  data_source: z.string(),
+  estimated_sales_potential_score: z.number(),
+  observed_offer_count: z.number().nullable(),
+  observed_review_count: z.number().nullable(),
+  observed_units_sold: z.number().nullable(),
+  observed_sales_signal: z.string().nullable(),
+  sales_rank_basis: z.string(),
+  listing_search_phrase: z.string(),
+  source_url: z.string().nullable(),
+  evidence_ids: z.array(z.string()),
+  confidence: z.number(),
+  risk_flags: z.array(z.string()),
+});
+
+export const marketplacePriceEstimateSchema = z.object({
+  platform: z.string(),
+  data_source: z.string(),
+  price_low: z.number().nullable(),
+  price_high: z.number().nullable(),
+  currency: z.string(),
+  observed_offer_count: z.number().nullable(),
+  price_basis: z.string(),
+  listing_search_phrase: z.string(),
+  source_url: z.string().nullable(),
+  evidence_ids: z.array(z.string()),
+  confidence: z.number(),
+  risk_flags: z.array(z.string()),
+});
+
+export const marketplaceSnapshotSchema = z.object({
+  title: z.string(),
+  summary: z.string(),
+  source_provider: z.string(),
+  source_query: z.string(),
+  retrieved_at: z.string(),
+  is_live_data: z.boolean(),
+  methodology: z.string(),
+  limitations: z.array(z.string()),
+  platform_rankings: z.array(marketplacePlatformEstimateSchema),
+  price_estimates: z.array(marketplacePriceEstimateSchema),
+  warnings: z.array(z.string()),
+  overall_confidence: z.number(),
+});
+
 export const perceptionRunSchema = z.object({
   schema_version: z.string(),
   run_id: z.string(),
@@ -107,6 +155,7 @@ export const perceptionRunSchema = z.object({
   request: z.record(z.unknown()),
   images: z.array(z.record(z.unknown())),
   product_profile: productProfileSchema,
+  marketplace_snapshot: marketplaceSnapshotSchema,
   keyword_candidates: z.array(keywordCandidateSchema),
   keyword_clusters: z.array(keywordClusterSchema),
   warnings: z.array(z.string()),
@@ -132,5 +181,12 @@ export type ClaimFlag = z.infer<typeof claimFlagSchema>;
 export type ProductProfile = z.infer<typeof productProfileSchema>;
 export type KeywordCandidate = z.infer<typeof keywordCandidateSchema>;
 export type KeywordCluster = z.infer<typeof keywordClusterSchema>;
+export type MarketplacePlatformEstimate = z.infer<
+  typeof marketplacePlatformEstimateSchema
+>;
+export type MarketplacePriceEstimate = z.infer<
+  typeof marketplacePriceEstimateSchema
+>;
+export type MarketplaceSnapshot = z.infer<typeof marketplaceSnapshotSchema>;
 export type PerceptionRun = z.infer<typeof perceptionRunSchema>;
 export type AnalysisFormValues = z.infer<typeof analysisFormSchema>;

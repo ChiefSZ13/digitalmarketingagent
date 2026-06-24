@@ -13,6 +13,7 @@ from marketing_agent.api.errors import (
     ProblemException,
     generic_exception_handler,
     image_validation_exception_handler,
+    marketplace_provider_exception_handler,
     problem_exception_handler,
     provider_exception_handler,
     request_validation_exception_handler,
@@ -20,6 +21,7 @@ from marketing_agent.api.errors import (
 from marketing_agent.api.routes.health import router as health_router
 from marketing_agent.api.routes.perception import router as perception_router
 from marketing_agent.config import get_settings
+from marketing_agent.domain.ports.marketplace_data_provider import MarketplaceDataProviderError
 from marketing_agent.infrastructure.ai.openai_perception_provider import OpenAIProviderError
 from marketing_agent.infrastructure.media.image_validation import ImageValidationError
 from marketing_agent.logging import configure_logging
@@ -68,6 +70,10 @@ def create_app() -> FastAPI:
     )
     app.add_exception_handler(
         OpenAIProviderError, cast(ExceptionHandler, provider_exception_handler)
+    )
+    app.add_exception_handler(
+        MarketplaceDataProviderError,
+        cast(ExceptionHandler, marketplace_provider_exception_handler),
     )
     app.add_exception_handler(
         RequestValidationError,

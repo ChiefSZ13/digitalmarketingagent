@@ -8,9 +8,16 @@ from fastapi import Depends
 from marketing_agent.application.orchestration.perception_pipeline import PerceptionPipeline
 from marketing_agent.config import Settings, get_settings
 from marketing_agent.domain.ports.artifact_repository import ArtifactRepository
+from marketing_agent.domain.ports.marketplace_data_provider import MarketplaceDataProvider
 from marketing_agent.domain.ports.perception_provider import PerceptionProvider
 from marketing_agent.infrastructure.ai.mock_perception_provider import MockPerceptionProvider
 from marketing_agent.infrastructure.ai.openai_perception_provider import OpenAIPerceptionProvider
+from marketing_agent.infrastructure.marketplace.mock_marketplace_data_provider import (
+    MockMarketplaceDataProvider,
+)
+from marketing_agent.infrastructure.marketplace.serpapi_marketplace_data_provider import (
+    SerpApiMarketplaceDataProvider,
+)
 from marketing_agent.infrastructure.persistence.local_artifact_repository import (
     LocalArtifactRepository,
 )
@@ -42,9 +49,27 @@ def get_provider(settings: SettingsDep) -> PerceptionProvider:
     return MockPerceptionProvider()
 
 
+def get_marketplace_provider(settings: SettingsDep) -> MarketplaceDataProvider:
+    if settings.marketplace_data_provider.lower() == "serpapi":
+        if not settings.serpapi_api_key:
+            raise RuntimeError("SERPAPI_API_KEY is required when MARKETPLACE_DATA_PROVIDER=serpapi")
+        return SerpApiMarketplaceDataProvider(
+            api_key=settings.serpapi_api_key,
+            timeout_seconds=settings.marketplace_timeout_seconds,
+            location=settings.serpapi_location,
+        )
+    return MockMarketplaceDataProvider()
+
+
 def get_pipeline(
     settings: SettingsDep,
     provider: Annotated[PerceptionProvider, Depends(get_provider)],
+    marketplace_provider: Annotated[MarketplaceDataProvider, Depends(get_marketplace_provider)],
     repository: Annotated[ArtifactRepository, Depends(get_repository)],
 ) -> PerceptionPipeline:
-    return PerceptionPipeline(settings=settings, provider=provider, repository=repository)
+    return PerceptionPipeline(
+        settings=settings,
+        provider=provider,
+        marketplace_provider=marketplace_provider,
+        repository=repository,
+    )

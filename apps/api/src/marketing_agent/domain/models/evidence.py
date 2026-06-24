@@ -12,6 +12,7 @@ class EvidenceSource(StrEnum):
     IMAGE_OBSERVATION = "image_observation"
     MODEL_INFERENCE = "model_inference"
     KEYWORD_PROVIDER = "keyword_provider"
+    MARKETPLACE_PROVIDER = "marketplace_provider"
 
 
 class EvidenceRecord(BaseModel):

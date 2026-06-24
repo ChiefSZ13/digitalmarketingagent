@@ -12,12 +12,17 @@ from marketing_agent.domain.models.run import (
     StageStatus,
 )
 from marketing_agent.domain.ports.artifact_repository import ArtifactRepository
+from marketing_agent.domain.ports.marketplace_data_provider import (
+    MarketplaceDataProvider,
+    MarketplaceDataProviderRequest,
+)
 from marketing_agent.domain.ports.perception_provider import (
     PerceptionProvider,
     PerceptionProviderRequest,
 )
 from marketing_agent.domain.services.evidence_validator import (
     validate_keyword_evidence,
+    validate_marketplace_evidence,
     validate_profile_evidence,
 )
 from marketing_agent.domain.services.keyword_clusterer import cluster_keywords
@@ -35,10 +40,12 @@ class PerceptionPipeline:
         *,
         settings: Settings,
         provider: PerceptionProvider,
+        marketplace_provider: MarketplaceDataProvider,
         repository: ArtifactRepository,
     ) -> None:
         self.settings = settings
         self.provider = provider
+        self.marketplace_provider = marketplace_provider
         self.repository = repository
 
     async def analyze(self, command: AnalyzeProductCommand) -> PerceptionRun:
@@ -72,11 +79,27 @@ class PerceptionPipeline:
 
         validate_profile_evidence(provider_result.product_profile)
         self._complete_stage(
-            stages, "validate_evidence_coverage", "Profile evidence coverage verified."
+            stages,
+            "validate_evidence_coverage",
+            "Profile evidence coverage verified.",
         )
 
         profile = normalize_product_profile(provider_result.product_profile)
         self._complete_stage(stages, "normalize_product_profile", "Profile normalized.")
+
+        marketplace_result = await self.marketplace_provider.fetch_snapshot(
+            MarketplaceDataProviderRequest(request=command.request, product_profile=profile)
+        )
+        warnings.extend(marketplace_result.warnings)
+        profile = profile.model_copy(
+            update={"evidence": [*profile.evidence, *marketplace_result.evidence]}
+        )
+        validate_marketplace_evidence(profile, marketplace_result.snapshot)
+        self._complete_stage(
+            stages,
+            "fetch_marketplace_snapshot",
+            "Marketplace snapshot fetched and normalized.",
+        )
 
         generated = generate_keyword_candidates(profile)
         self._complete_stage(
@@ -105,6 +128,7 @@ class PerceptionPipeline:
             request=command.request,
             images=[image.metadata for image in validated_images],
             product_profile=profile,
+            marketplace_snapshot=marketplace_result.snapshot,
             keyword_candidates=candidates,
             keyword_clusters=clusters,
             warnings=warnings,

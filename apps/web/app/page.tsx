@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 import { AnalysisProgress } from "@/components/analysis-progress";
 import { JsonExport } from "@/components/json-export";
 import { KeywordClusterSummary } from "@/components/keyword-cluster-summary";
+import { MarketplaceSnapshotPanel } from "@/components/marketplace-snapshot-panel";
 import {
   type KeywordFilterState,
   KeywordFilters,
@@ -119,6 +120,7 @@ function ProductPerceptionPage() {
             {run ? (
               <>
                 <ProductProfilePanel profile={run.product_profile} />
+                <MarketplaceSnapshotPanel snapshot={run.marketplace_snapshot} />
                 <KeywordClusterSummary clusters={run.keyword_clusters} />
                 <KeywordFilters
                   value={filters}
@@ -139,8 +141,8 @@ function ProductPerceptionPage() {
                   Results will appear here
                 </h2>
                 <p className="mt-2 text-sm text-gray-600">
-                  The product profile, keyword clusters, evidence, and JSON
-                  export are shown after a run.
+                  The product profile, marketplace snapshot, keyword clusters,
+                  evidence, and JSON export are shown after a run.
                 </p>
               </section>
             )}
