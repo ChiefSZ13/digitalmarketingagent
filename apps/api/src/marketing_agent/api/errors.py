@@ -1,5 +1,7 @@
 """RFC 7807-style error mapping."""
 
+from collections.abc import Mapping
+
 from fastapi import Request
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
@@ -22,11 +24,20 @@ class ProblemDetails(BaseModel):
 
 
 class ProblemException(Exception):
-    def __init__(self, *, title: str, detail: str, status_code: int, type_: str) -> None:
+    def __init__(
+        self,
+        *,
+        title: str,
+        detail: str,
+        status_code: int,
+        type_: str,
+        headers: Mapping[str, str] | None = None,
+    ) -> None:
         self.title = title
         self.detail = detail
         self.status_code = status_code
         self.type_ = type_
+        self.headers = dict(headers or {})
 
 
 def request_id(request: Request) -> str:
@@ -40,6 +51,7 @@ def problem_response(
     detail: str,
     status_code: int,
     type_: str,
+    headers: Mapping[str, str] | None = None,
 ) -> JSONResponse:
     body = ProblemDetails(
         type=type_,
@@ -49,7 +61,11 @@ def problem_response(
         instance=str(request.url.path),
         request_id=request_id(request),
     )
-    return JSONResponse(status_code=status_code, content=body.model_dump(mode="json"))
+    return JSONResponse(
+        status_code=status_code,
+        content=body.model_dump(mode="json"),
+        headers=dict(headers or {}),
+    )
 
 
 async def problem_exception_handler(request: Request, exc: ProblemException) -> JSONResponse:
@@ -59,6 +75,7 @@ async def problem_exception_handler(request: Request, exc: ProblemException) -> 
         detail=exc.detail,
         status_code=exc.status_code,
         type_=exc.type_,
+        headers=exc.headers,
     )
 
 

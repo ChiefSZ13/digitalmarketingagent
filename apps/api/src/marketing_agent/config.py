@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     app_host: str = "127.0.0.1"
     app_port: int = 8000
     perception_provider: str = "mock"
+    app_access_key: str | None = None
+    rate_limit_requests: int = Field(default=20, ge=0)
+    rate_limit_window_seconds: int = Field(default=3600, gt=0)
     openai_api_key: str | None = None
     openai_model: str = "gpt-4.1-mini"
     perception_timeout_seconds: float = 30.0
