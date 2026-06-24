@@ -38,6 +38,9 @@ APP_HOST=127.0.0.1
 APP_PORT=8010
 WEB_HOST=127.0.0.1
 WEB_PORT=3101
+APP_ACCESS_KEY=choose_a_long_random_value
+RATE_LIMIT_REQUESTS=20
+RATE_LIMIT_WINDOW_SECONDS=3600
 PERCEPTION_PROVIDER=openai
 OPENAI_API_KEY=your_openai_key_here
 OPENAI_MODEL=gpt-4.1-mini
@@ -54,6 +57,11 @@ PERCEPTION_PROVIDER=mock
 
 `OPENAI_API_KEY` is read only by the backend. Do not put provider keys in
 `NEXT_PUBLIC_*` variables because those are exposed to browser code.
+
+`APP_ACCESS_KEY` protects the API with an `X-App-Access-Key` header when set.
+The browser form includes an Access key field and sends that value only with the
+analysis request. In production, `APP_ACCESS_KEY` must be configured; otherwise
+the API fails closed with `503`.
 
 ## Run Locally
 

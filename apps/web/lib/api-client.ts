@@ -29,15 +29,17 @@ export async function createPerceptionRun(
   const formData = new FormData();
   images.forEach((image) => formData.append("images", image));
   Object.entries(values).forEach(([key, value]) => {
-    if (value) {
+    if (key !== "access_key" && value) {
       formData.append(key, value);
     }
   });
 
   const baseUrl =
     process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:8000";
+  const accessKey = values.access_key?.trim();
   const response = await fetch(`${baseUrl}/api/v1/perception-runs`, {
     method: "POST",
+    headers: accessKey ? { "X-App-Access-Key": accessKey } : undefined,
     body: formData,
   });
   const payload = await response.json();

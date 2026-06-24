@@ -116,6 +116,7 @@ export const perceptionRunSchema = z.object({
 });
 
 export const analysisFormSchema = z.object({
+  access_key: z.string().optional(),
   description: z.string().trim().min(1, "Description is required."),
   brand: z.string().optional(),
   market: z.string().optional(),

@@ -7,6 +7,7 @@ from starlette import status
 
 from marketing_agent.api.dependencies import get_pipeline, get_repository
 from marketing_agent.api.errors import ProblemException
+from marketing_agent.api.security import AccessKeyDep, PerceptionRateLimitDep
 from marketing_agent.application.commands.analyze_product import (
     AnalyzeProductCommand,
     RawImageInput,
@@ -25,6 +26,8 @@ RepositoryDep = Annotated[ArtifactRepository, Depends(get_repository)]
 async def create_perception_run(
     images: Annotated[list[UploadFile], File(description="One to five JPG, PNG, or WebP images")],
     description: Annotated[str, Form(min_length=1)],
+    _access_key: AccessKeyDep,
+    _rate_limit: PerceptionRateLimitDep,
     pipeline: PipelineDep,
     brand: Annotated[str | None, Form()] = None,
     market: Annotated[str | None, Form()] = None,
@@ -59,6 +62,7 @@ async def create_perception_run(
 @router.get("/{run_id}", response_model=PerceptionRun)
 async def get_perception_run(
     run_id: str,
+    _access_key: AccessKeyDep,
     repository: RepositoryDep,
 ) -> PerceptionRun:
     run = await repository.get_run(run_id)

@@ -34,6 +34,7 @@ export function ProductAnalysisForm({
       language: "en-US",
       category_hint: "",
       target_audience_hint: "",
+      access_key: "",
     },
   });
 
@@ -62,6 +63,15 @@ export function ProductAnalysisForm({
           {imageError}
         </p>
       ) : null}
+
+      <div>
+        <TextInput
+          label="Access key"
+          id="access_key"
+          type="password"
+          register={register("access_key")}
+        />
+      </div>
 
       <div>
         <label
@@ -137,10 +147,11 @@ export function ProductAnalysisForm({
 type TextInputProps = {
   label: string;
   id: keyof AnalysisFormValues;
+  type?: "password" | "text";
   register: UseFormRegisterReturn;
 };
 
-function TextInput({ label, id, register }: TextInputProps) {
+function TextInput({ label, id, register, type = "text" }: TextInputProps) {
   return (
     <div className="min-w-0">
       <label className="block text-sm font-medium text-gray-900" htmlFor={id}>
@@ -149,7 +160,7 @@ function TextInput({ label, id, register }: TextInputProps) {
       <input
         id={id}
         className="mt-2 min-w-0 w-full rounded border border-gray-300 px-3 py-2 text-sm"
-        type="text"
+        type={type}
         {...register}
       />
     </div>
