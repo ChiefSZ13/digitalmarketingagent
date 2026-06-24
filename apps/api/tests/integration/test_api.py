@@ -43,6 +43,32 @@ def _valid_upload() -> dict[str, Any]:
 
 
 @pytest.mark.asyncio
+async def test_configured_cors_origin_allows_access_key_preflight(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    origin = "https://digitalmarketingagent.vercel.app"
+    monkeypatch.setenv("CORS_ALLOWED_ORIGINS", origin)
+    get_settings.cache_clear()
+    app = create_app()
+    get_settings.cache_clear()
+
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.options(
+            "/api/v1/perception-runs",
+            headers={
+                "Origin": origin,
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": ACCESS_KEY_HEADER,
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == origin
+    assert ACCESS_KEY_HEADER in response.headers["access-control-allow-headers"]
+
+
+@pytest.mark.asyncio
 async def test_create_and_get_perception_run(tmp_path: Path) -> None:
     app = _create_test_app(tmp_path)
     transport = httpx.ASGITransport(app=app)

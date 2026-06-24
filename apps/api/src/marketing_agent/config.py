@@ -6,6 +6,17 @@ from pathlib import Path
 from pydantic import Field
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
+DEFAULT_CORS_ALLOWED_ORIGINS = ",".join(
+    (
+        "http://127.0.0.1:3000",
+        "http://localhost:3000",
+        "http://127.0.0.1:3100",
+        "http://localhost:3100",
+        "http://127.0.0.1:3101",
+        "http://localhost:3101",
+    )
+)
+
 
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
@@ -18,6 +29,7 @@ class Settings(BaseSettings):
     app_log_level: str = "INFO"
     app_host: str = "127.0.0.1"
     app_port: int = 8000
+    cors_allowed_origins: str = DEFAULT_CORS_ALLOWED_ORIGINS
     perception_provider: str = "mock"
     marketplace_data_provider: str = "mock"
     serpapi_api_key: str | None = None
@@ -37,6 +49,14 @@ class Settings(BaseSettings):
     @property
     def is_production(self) -> bool:
         return self.app_env.lower() == "production"
+
+    @property
+    def cors_origins(self) -> list[str]:
+        return [
+            origin.strip().rstrip("/")
+            for origin in self.cors_allowed_origins.split(",")
+            if origin.strip()
+        ]
 
 
 @lru_cache
