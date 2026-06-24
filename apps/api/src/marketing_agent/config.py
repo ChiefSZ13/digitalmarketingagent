@@ -19,6 +19,10 @@ class Settings(BaseSettings):
     app_host: str = "127.0.0.1"
     app_port: int = 8000
     perception_provider: str = "mock"
+    marketplace_data_provider: str = "mock"
+    serpapi_api_key: str | None = None
+    serpapi_location: str | None = "United States"
+    marketplace_timeout_seconds: float = 20.0
     app_access_key: str | None = None
     rate_limit_requests: int = Field(default=20, ge=0)
     rate_limit_window_seconds: int = Field(default=3600, gt=0)

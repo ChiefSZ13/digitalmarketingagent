@@ -127,6 +127,11 @@ class MockPerceptionProvider:
                 value=category, evidence_ids=category_evidence, confidence=0.78
             ),
             subcategory=None,
+            marketplace_search_query=EvidenceLinkedText(
+                value=product_name,
+                evidence_ids=["ev-description-1", "ev-inference-1"],
+                confidence=0.72,
+            ),
             summary=EvidenceLinkedText(
                 value=f"{product_name} positioned for {use_case}.",
                 evidence_ids=["ev-description-1", "ev-inference-1"],
@@ -242,7 +247,7 @@ class MockPerceptionProvider:
                 usage=None,
             ),
             warnings=[
-                "Mock provider used; visual product attributes are intentionally conservative."
+                "Mock provider used; visual product attributes are intentionally conservative.",
             ],
         )
 

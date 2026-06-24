@@ -6,9 +6,10 @@ from enum import StrEnum
 from pydantic import BaseModel, ConfigDict, Field
 
 from marketing_agent.domain.models.keyword import KeywordCandidate, KeywordCluster
+from marketing_agent.domain.models.marketplace import MarketplaceSnapshot
 from marketing_agent.domain.models.product import ProductProfile
 
-SCHEMA_VERSION = "2026-06-23.mvp1b.v1"
+SCHEMA_VERSION = "2026-06-24.marketplace_snapshot.v1"
 
 
 class StageState(StrEnum):
@@ -81,6 +82,7 @@ class PerceptionRun(BaseModel):
     request: ProductAnalysisRequest
     images: list[ImageInput]
     product_profile: ProductProfile
+    marketplace_snapshot: MarketplaceSnapshot
     keyword_candidates: list[KeywordCandidate]
     keyword_clusters: list[KeywordCluster]
     warnings: list[str] = Field(default_factory=list)

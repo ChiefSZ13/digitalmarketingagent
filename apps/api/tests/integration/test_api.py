@@ -14,11 +14,15 @@ from tests.conftest import make_png_bytes
 
 def _create_test_app(tmp_path: Path, **settings_overrides: Any) -> FastAPI:
     app = create_app()
-    app.dependency_overrides[get_settings] = lambda: Settings(
-        artifact_dir=tmp_path / "runs",
-        perception_provider="mock",
-        **settings_overrides,
-    )
+    settings_values: dict[str, Any] = {
+        "artifact_dir": tmp_path / "runs",
+        "perception_provider": "mock",
+        "marketplace_data_provider": "mock",
+        "serpapi_api_key": None,
+        "app_access_key": None,
+    }
+    settings_values.update(settings_overrides)
+    app.dependency_overrides[get_settings] = lambda: Settings(**settings_values)
     get_repository_cached.cache_clear()
     get_perception_rate_limiter().reset()
     return app
@@ -47,6 +51,8 @@ async def test_create_and_get_perception_run(tmp_path: Path) -> None:
         assert response.status_code == 201, response.text
         payload = response.json()
         assert payload["product_profile"]["product_name"]
+        assert len(payload["marketplace_snapshot"]["platform_rankings"]) == 10
+        assert payload["marketplace_snapshot"]["is_live_data"] is False
         assert payload["keyword_clusters"]
         assert payload["warnings"]
 

@@ -1,5 +1,5 @@
 {
-  "schema_version": "2026-06-23.mvp1b.v1",
+  "schema_version": "2026-06-24.marketplace_snapshot.v1",
   "run_id": "run_fixture_portable_lamp",
   "created_at": "2026-06-23T17:00:00Z",
   "completed_at": "2026-06-23T17:00:01Z",
@@ -187,9 +187,23 @@
         "quote": null,
         "confidence": 0.72,
         "created_at": "2026-06-23T17:00:00Z"
+      },
+      {
+        "id": "ev-marketplace-mock-1",
+        "source": "marketplace_provider",
+        "source_reference": "mock_marketplace_provider",
+        "observation": "Mock marketplace provider returned deterministic fixture data. No live marketplace request was made.",
+        "quote": "Portable Rechargeable Desk Lamp US",
+        "confidence": 1,
+        "created_at": "2026-06-23T17:00:00Z"
       }
     ],
-    "overall_confidence": 0.76
+    "overall_confidence": 0.76,
+    "marketplace_search_query": {
+      "value": "Portable Rechargeable Desk Lamp",
+      "evidence_ids": ["ev-description-1", "ev-inference-1"],
+      "confidence": 0.72
+    }
   },
   "keyword_candidates": [
     {
@@ -351,8 +365,270 @@
       "recommended_usage": "Review before adding to negative keyword lists."
     }
   ],
+  "marketplace_snapshot": {
+    "title": "Marketplace Snapshot for Portable Rechargeable Desk Lamp",
+    "summary": "Mock marketplace ranking and price ranges for development.",
+    "is_live_data": false,
+    "methodology": "Deterministic fixture shaped like live marketplace-provider output.",
+    "limitations": [
+      "No marketplace APIs, retailer feeds, web search, or scraping were used.",
+      "Use SerpAPI or another marketplace provider for live data."
+    ],
+    "platform_rankings": [
+      {
+        "rank": 1,
+        "platform": "Amazon",
+        "platform_type": "marketplace",
+        "estimated_sales_potential_score": 0.9,
+        "sales_rank_basis": "Mock ranking shaped like real marketplace data for category 'Lighting'.",
+        "listing_search_phrase": "Portable Rechargeable Desk Lamp Amazon",
+        "evidence_ids": ["ev-marketplace-mock-1"],
+        "confidence": 0.5,
+        "risk_flags": ["mock_data", "not_live_marketplace_data"],
+        "data_source": "mock_marketplace_provider",
+        "observed_offer_count": 8,
+        "observed_review_count": 7900,
+        "observed_units_sold": null,
+        "observed_sales_signal": null,
+        "source_url": null
+      },
+      {
+        "rank": 2,
+        "platform": "Walmart Marketplace",
+        "platform_type": "marketplace",
+        "estimated_sales_potential_score": 0.78,
+        "sales_rank_basis": "Mock ranking shaped like real marketplace data for category 'Lighting'.",
+        "listing_search_phrase": "Portable Rechargeable Desk Lamp Walmart Marketplace",
+        "evidence_ids": ["ev-marketplace-mock-1"],
+        "confidence": 0.5,
+        "risk_flags": ["mock_data", "not_live_marketplace_data"],
+        "data_source": "mock_marketplace_provider",
+        "observed_offer_count": 5,
+        "observed_review_count": 640,
+        "observed_units_sold": null,
+        "observed_sales_signal": null,
+        "source_url": null
+      },
+      {
+        "rank": 3,
+        "platform": "AliExpress",
+        "platform_type": "marketplace",
+        "estimated_sales_potential_score": 0.74,
+        "sales_rank_basis": "Mock ranking shaped like real marketplace data for category 'Lighting'.",
+        "listing_search_phrase": "Portable Rechargeable Desk Lamp AliExpress",
+        "evidence_ids": ["ev-marketplace-mock-1"],
+        "confidence": 0.5,
+        "risk_flags": ["mock_data", "not_live_marketplace_data"],
+        "data_source": "mock_marketplace_provider",
+        "observed_offer_count": 4,
+        "observed_review_count": 2100,
+        "observed_units_sold": null,
+        "observed_sales_signal": null,
+        "source_url": null
+      },
+      {
+        "rank": 4,
+        "platform": "eBay",
+        "platform_type": "marketplace",
+        "estimated_sales_potential_score": 0.66,
+        "sales_rank_basis": "Mock ranking shaped like real marketplace data for category 'Lighting'.",
+        "listing_search_phrase": "Portable Rechargeable Desk Lamp eBay",
+        "evidence_ids": ["ev-marketplace-mock-1"],
+        "confidence": 0.5,
+        "risk_flags": ["mock_data", "not_live_marketplace_data"],
+        "data_source": "mock_marketplace_provider",
+        "observed_offer_count": 3,
+        "observed_review_count": 330,
+        "observed_units_sold": null,
+        "observed_sales_signal": null,
+        "source_url": null
+      },
+      {
+        "rank": 5,
+        "platform": "Temu",
+        "platform_type": "marketplace",
+        "estimated_sales_potential_score": 0.64,
+        "sales_rank_basis": "Mock ranking shaped like real marketplace data for category 'Lighting'.",
+        "listing_search_phrase": "Portable Rechargeable Desk Lamp Temu",
+        "evidence_ids": ["ev-marketplace-mock-1"],
+        "confidence": 0.5,
+        "risk_flags": ["mock_data", "not_live_marketplace_data"],
+        "data_source": "mock_marketplace_provider",
+        "observed_offer_count": 3,
+        "observed_review_count": 1800,
+        "observed_units_sold": null,
+        "observed_sales_signal": null,
+        "source_url": null
+      },
+      {
+        "rank": 6,
+        "platform": "Target",
+        "platform_type": "retailer",
+        "estimated_sales_potential_score": 0.58,
+        "sales_rank_basis": "Mock ranking shaped like real marketplace data for category 'Lighting'.",
+        "listing_search_phrase": "Portable Rechargeable Desk Lamp Target",
+        "evidence_ids": ["ev-marketplace-mock-1"],
+        "confidence": 0.4,
+        "risk_flags": ["mock_data", "not_live_marketplace_data"],
+        "data_source": "mock_marketplace_provider",
+        "observed_offer_count": 2,
+        "observed_review_count": 180,
+        "observed_units_sold": null,
+        "observed_sales_signal": null,
+        "source_url": null
+      },
+      {
+        "rank": 7,
+        "platform": "Wayfair",
+        "platform_type": "specialty",
+        "estimated_sales_potential_score": 0.53,
+        "sales_rank_basis": "Mock ranking shaped like real marketplace data for category 'Lighting'.",
+        "listing_search_phrase": "Portable Rechargeable Desk Lamp Wayfair",
+        "evidence_ids": ["ev-marketplace-mock-1"],
+        "confidence": 0.4,
+        "risk_flags": ["mock_data", "not_live_marketplace_data"],
+        "data_source": "mock_marketplace_provider",
+        "observed_offer_count": 2,
+        "observed_review_count": 520,
+        "observed_units_sold": null,
+        "observed_sales_signal": null,
+        "source_url": null
+      },
+      {
+        "rank": 8,
+        "platform": "Etsy",
+        "platform_type": "marketplace",
+        "estimated_sales_potential_score": 0.45,
+        "sales_rank_basis": "Mock ranking shaped like real marketplace data for category 'Lighting'.",
+        "listing_search_phrase": "Portable Rechargeable Desk Lamp Etsy",
+        "evidence_ids": ["ev-marketplace-mock-1"],
+        "confidence": 0.4,
+        "risk_flags": ["mock_data", "not_live_marketplace_data"],
+        "data_source": "mock_marketplace_provider",
+        "observed_offer_count": 2,
+        "observed_review_count": 95,
+        "observed_units_sold": null,
+        "observed_sales_signal": null,
+        "source_url": null
+      },
+      {
+        "rank": 9,
+        "platform": "TikTok Shop",
+        "platform_type": "social_commerce",
+        "estimated_sales_potential_score": 0.43,
+        "sales_rank_basis": "Mock ranking shaped like real marketplace data for category 'Lighting'.",
+        "listing_search_phrase": "Portable Rechargeable Desk Lamp TikTok Shop",
+        "evidence_ids": ["ev-marketplace-mock-1"],
+        "confidence": 0.4,
+        "risk_flags": ["mock_data", "not_live_marketplace_data"],
+        "data_source": "mock_marketplace_provider",
+        "observed_offer_count": 1,
+        "observed_review_count": 0,
+        "observed_units_sold": null,
+        "observed_sales_signal": null,
+        "source_url": null
+      },
+      {
+        "rank": 10,
+        "platform": "Independent Shopify stores",
+        "platform_type": "brand_store",
+        "estimated_sales_potential_score": 0.38,
+        "sales_rank_basis": "Mock ranking shaped like real marketplace data for category 'Lighting'.",
+        "listing_search_phrase": "Portable Rechargeable Desk Lamp Independent Shopify stores",
+        "evidence_ids": ["ev-marketplace-mock-1"],
+        "confidence": 0.4,
+        "risk_flags": ["mock_data", "not_live_marketplace_data"],
+        "data_source": "mock_marketplace_provider",
+        "observed_offer_count": 1,
+        "observed_review_count": 0,
+        "observed_units_sold": null,
+        "observed_sales_signal": null,
+        "source_url": null
+      }
+    ],
+    "price_estimates": [
+      {
+        "platform": "Amazon",
+        "price_low": 18.99,
+        "price_high": 39.99,
+        "currency": "USD",
+        "price_basis": "Mock comparable-listing price range for UI and contract tests.",
+        "listing_search_phrase": "Portable Rechargeable Desk Lamp Amazon",
+        "evidence_ids": ["ev-marketplace-mock-1"],
+        "confidence": 0.42,
+        "risk_flags": ["mock_data", "not_live_marketplace_data"],
+        "data_source": "mock_marketplace_provider",
+        "observed_offer_count": 8,
+        "source_url": null
+      },
+      {
+        "platform": "Walmart Marketplace",
+        "price_low": 16.99,
+        "price_high": 34.99,
+        "currency": "USD",
+        "price_basis": "Mock comparable-listing price range for UI and contract tests.",
+        "listing_search_phrase": "Portable Rechargeable Desk Lamp Walmart Marketplace",
+        "evidence_ids": ["ev-marketplace-mock-1"],
+        "confidence": 0.42,
+        "risk_flags": ["mock_data", "not_live_marketplace_data"],
+        "data_source": "mock_marketplace_provider",
+        "observed_offer_count": 5,
+        "source_url": null
+      },
+      {
+        "platform": "AliExpress",
+        "price_low": 8.99,
+        "price_high": 24.99,
+        "currency": "USD",
+        "price_basis": "Mock comparable-listing price range for UI and contract tests.",
+        "listing_search_phrase": "Portable Rechargeable Desk Lamp AliExpress",
+        "evidence_ids": ["ev-marketplace-mock-1"],
+        "confidence": 0.42,
+        "risk_flags": ["mock_data", "not_live_marketplace_data"],
+        "data_source": "mock_marketplace_provider",
+        "observed_offer_count": 4,
+        "source_url": null
+      },
+      {
+        "platform": "eBay",
+        "price_low": 11.99,
+        "price_high": 32.99,
+        "currency": "USD",
+        "price_basis": "Mock comparable-listing price range for UI and contract tests.",
+        "listing_search_phrase": "Portable Rechargeable Desk Lamp eBay",
+        "evidence_ids": ["ev-marketplace-mock-1"],
+        "confidence": 0.42,
+        "risk_flags": ["mock_data", "not_live_marketplace_data"],
+        "data_source": "mock_marketplace_provider",
+        "observed_offer_count": 3,
+        "source_url": null
+      },
+      {
+        "platform": "Temu",
+        "price_low": 7.99,
+        "price_high": 21.99,
+        "currency": "USD",
+        "price_basis": "Mock comparable-listing price range for UI and contract tests.",
+        "listing_search_phrase": "Portable Rechargeable Desk Lamp Temu",
+        "evidence_ids": ["ev-marketplace-mock-1"],
+        "confidence": 0.42,
+        "risk_flags": ["mock_data", "not_live_marketplace_data"],
+        "data_source": "mock_marketplace_provider",
+        "observed_offer_count": 3,
+        "source_url": null
+      }
+    ],
+    "warnings": [
+      "Mock marketplace data used; not suitable for production decisions."
+    ],
+    "overall_confidence": 0.5,
+    "source_provider": "mock",
+    "source_query": "Portable Rechargeable Desk Lamp",
+    "retrieved_at": "2026-06-23T17:00:00Z"
+  },
   "warnings": [
-    "Mock provider used; visual product attributes are intentionally conservative."
+    "Mock provider used; visual product attributes are intentionally conservative.",
+    "Mock marketplace data used; not suitable for production decisions."
   ],
   "errors": [],
   "stage_statuses": [

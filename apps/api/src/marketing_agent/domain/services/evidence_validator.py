@@ -2,6 +2,7 @@
 
 from marketing_agent.domain.models.evidence import ClaimFlag, EvidenceLinkedText
 from marketing_agent.domain.models.keyword import KeywordCandidate
+from marketing_agent.domain.models.marketplace import MarketplaceSnapshot
 from marketing_agent.domain.models.product import ProductProfile
 
 
@@ -17,6 +18,7 @@ def validate_profile_evidence(profile: ProductProfile) -> None:
         "brand",
         "category",
         "subcategory",
+        "marketplace_search_query",
         "summary",
     ):
         value = getattr(profile, field_name)
@@ -62,4 +64,20 @@ def validate_keyword_evidence(profile: ProductProfile, candidates: list[KeywordC
         if missing:
             raise EvidenceCoverageError(
                 f"keyword '{candidate.text}' references missing evidence: {missing}"
+            )
+
+
+def validate_marketplace_evidence(profile: ProductProfile, snapshot: MarketplaceSnapshot) -> None:
+    evidence_ids = {record.id for record in profile.evidence}
+    for platform in snapshot.platform_rankings:
+        missing = set(platform.evidence_ids).difference(evidence_ids)
+        if missing:
+            raise EvidenceCoverageError(
+                f"marketplace platform '{platform.platform}' references missing evidence: {missing}"
+            )
+    for price in snapshot.price_estimates:
+        missing = set(price.evidence_ids).difference(evidence_ids)
+        if missing:
+            raise EvidenceCoverageError(
+                f"marketplace price '{price.platform}' references missing evidence: {missing}"
             )

@@ -2,7 +2,7 @@
 
 This repository contains the first working slice of an agentic digital-marketing platform: a FastAPI backend, a Next.js frontend, deterministic mock providers, and a live OpenAI perception adapter kept behind a provider port.
 
-Current scope is MVP 0, MVP 1, and MVP 1B only. The app accepts one to five product images and a description, returns an evidence-backed product profile, generates categorized and ranked keyword candidates, clusters them, and lets a user inspect and export the result in the browser.
+Current scope is MVP 0, MVP 1, and MVP 1B. Inside MVP 1, the app also includes a data-collection sub-track for Marketplace Snapshot: one to five product images and a description become an evidence-backed product profile, provider-backed marketplace and price observations, categorized and ranked keyword candidates, keyword clusters, and browser-reviewable JSON export.
 
 ## Repository Layout
 
@@ -44,6 +44,9 @@ RATE_LIMIT_WINDOW_SECONDS=3600
 PERCEPTION_PROVIDER=openai
 OPENAI_API_KEY=your_openai_key_here
 OPENAI_MODEL=gpt-4.1-mini
+MARKETPLACE_DATA_PROVIDER=mock
+SERPAPI_API_KEY=
+SERPAPI_LOCATION=United States
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8010
 NEXT_PUBLIC_USE_FIXTURES=false
 ```
@@ -57,6 +60,27 @@ PERCEPTION_PROVIDER=mock
 
 `OPENAI_API_KEY` is read only by the backend. Do not put provider keys in
 `NEXT_PUBLIC_*` variables because those are exposed to browser code.
+
+Marketplace Snapshot uses a separate provider port so the JSON shape stays
+fixed even when the data vendor changes. For live Google Shopping observations,
+use SerpAPI:
+
+```bash
+MARKETPLACE_DATA_PROVIDER=serpapi
+SERPAPI_API_KEY=your_serpapi_key_here
+SERPAPI_LOCATION=United States
+```
+
+The live provider fills `marketplace_snapshot` with observed marketplace/source
+names, offer counts, review counts, price ranges, source URLs, retrieval time,
+and evidence IDs. It does not claim true cross-platform total units sold unless
+the provider result explicitly exposes a sold/bought signal for a listing.
+Its search query comes from the normalized product profile field
+`marketplace_search_query`, which the perception model is asked to set to the
+core product model for broad sales and price discovery. For example, a specific
+variant such as `Nike Air Jordan 5 Retro University Blue` should produce
+`Nike Air Jordan 5`. Deterministic cleanup remains only as a fallback when the
+model cannot provide the field; the raw human description is last resort.
 
 `APP_ACCESS_KEY` protects the API with an `X-App-Access-Key` header when set.
 The browser form includes an Access key field and sends that value only with the
@@ -143,7 +167,7 @@ curl -X POST http://127.0.0.1:8010/api/v1/perception-runs \
   -F "language=en-US"
 ```
 
-The response contains a `run_id`, product profile sections, evidence records, keyword candidates, clusters, warnings, stage statuses, and provider metadata. Search volume, CPC, competition, ranking, and trend fields are reserved for MVP 1C and remain `null` in this slice.
+The response contains a `run_id`, product profile sections, marketplace snapshot, evidence records, keyword candidates, clusters, warnings, stage statuses, and provider metadata. Search volume, CPC, competition, and trend fields are reserved for MVP 1C and remain `null` in this slice.
 
 ## CLI Example
 
@@ -170,15 +194,17 @@ make check
 
 ## Frontend Workflow
 
-The single-page UI supports image upload, previews, image removal, required description validation, optional metadata, pending/error/success states, product profile review, keyword cluster cards, keyword search/filter/sort, expandable keyword evidence details, and JSON copy/download.
+The single-page UI supports image upload, previews, image removal, required description validation, optional metadata, pending/error/success states, product profile review, marketplace snapshot review, keyword cluster cards, keyword search/filter/sort, expandable keyword evidence details, and JSON copy/download.
 
 ## Architecture
 
-The backend is a modular monolith. Domain code defines Pydantic models and pure services. Application orchestration coordinates the pipeline through ports. Infrastructure implements the mock provider, OpenAI provider, image validation, and local artifact repository. API routes map HTTP requests to the same pipeline used by the CLI.
+The backend is a modular monolith. Domain code defines Pydantic models and pure services. Application orchestration coordinates the pipeline through ports. Infrastructure implements the mock perception provider, OpenAI perception provider, mock marketplace provider, SerpAPI marketplace provider, image validation, and local artifact repository. API routes map HTTP requests to the same pipeline used by the CLI.
 
 ## Limitations
 
 - Mock perception does not make factual visual claims beyond upload validity and image dimensions.
+- SerpAPI-backed Marketplace Snapshot uses live Google Shopping observations, not direct marketplace seller dashboards. It can rank observed sources and price ranges, but it cannot guarantee true cross-platform total units sold.
+- Mock Marketplace Snapshot is deterministic fixture data for local development and CI, not market evidence.
 - Live keyword-provider enrichment is not implemented.
 - PostgreSQL and Redis are optional future infrastructure only, not part of the MVP 1 runtime.
 - No authentication, publishing, ad-budget control, video generation, search-engine scraping, or autonomous optimization is included.
