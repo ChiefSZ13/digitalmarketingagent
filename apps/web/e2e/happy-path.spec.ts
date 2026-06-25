@@ -38,6 +38,27 @@ test("fixture-backed analysis flow", async ({ page }) => {
     page.getByRole("heading", { name: "Marketplace Snapshot" }),
   ).toBeVisible();
   await expect(page.getByText("Amazon").first()).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Validated matches" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Needs review" }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Rejected listings" }),
+  ).toBeVisible();
+  await expect(
+    page.getByText("Replacement charger for Portable Rechargeable Desk Lamp", {
+      exact: true,
+    }),
+  ).toBeVisible();
+  await expect(page.locator("table").first()).not.toContainText(
+    "Replacement charger",
+  );
+  await page.getByRole("button", { name: /accept as match/i }).click();
+  await expect(
+    page.getByText(/Local review override: Accepted/i),
+  ).toBeVisible();
   await page
     .getByRole("combobox", { name: /^Category$/ })
     .selectOption("negative");

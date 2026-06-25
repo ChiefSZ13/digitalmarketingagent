@@ -48,6 +48,16 @@ OPENAI_MODEL=gpt-4.1-mini
 MARKETPLACE_DATA_PROVIDER=mock
 SERPAPI_API_KEY=
 SERPAPI_LOCATION=United States
+PRODUCT_MATCHER_VERSION=product-matcher-v1
+PRODUCT_MATCH_EXACT_THRESHOLD=0.93
+PRODUCT_MATCH_PROBABLE_THRESHOLD=0.84
+PRODUCT_MATCH_UNCERTAIN_THRESHOLD=0.65
+PRODUCT_MATCH_REQUIRE_BRAND=false
+PRODUCT_MATCH_COLOR_STRICT=false
+PRODUCT_MATCH_EXCLUDE_REFURBISHED=true
+PRODUCT_MATCH_EXCLUDE_USED=true
+AMBIGUOUS_MATCH_REVIEWER_ENABLED=false
+AMBIGUOUS_MATCH_REVIEWER_PROVIDER=mock
 NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:8010
 NEXT_PUBLIC_USE_FIXTURES=false
 ```
@@ -82,6 +92,34 @@ core product model for broad sales and price discovery. For example, a specific
 variant such as `Nike Air Jordan 5 Retro University Blue` should produce
 `Nike Air Jordan 5`. Deterministic cleanup remains only as a fallback when the
 model cannot provide the field; the raw human description is last resort.
+
+Before any marketplace result enters platform rankings or price ranges, it now
+passes through deterministic product validation. The matcher builds a canonical
+product identity, normalizes each provider listing, applies hard conflict rules
+for identifiers, model numbers, brands, accessories, conditions, variants,
+bundles, and package quantities, then scores explainable similarity features.
+Rejected, uncertain, alternate-package, alternate-variant, and
+alternate-condition listings are excluded from the primary price range.
+
+Match statuses:
+
+- `exact_match`: strong identifier or model agreement, no hard conflicts, and
+  score above the exact threshold.
+- `probable_match`: no hard conflicts and enough deterministic identity/title
+  evidence to enter primary aggregation.
+- `uncertain`: not rejected, but missing or conflicting enough evidence to
+  require review; excluded from primary aggregation.
+- `rejected`: hard conflict or low deterministic similarity.
+
+The frontend shows validated matches, needs-review listings, rejected listings,
+alternate variants, alternate package quantities, and alternate conditions.
+Needs-review rows have local-only review actions for this milestone. These
+overrides do not mutate raw provider observations or stored artifacts.
+
+An optional ambiguity reviewer is configured but disabled by default:
+`AMBIGUOUS_MATCH_REVIEWER_ENABLED=false`. The deterministic matcher works
+without an LLM API key, and no LLM can override hard identifier, model, brand,
+accessory, or condition conflicts.
 
 For production, set `CORS_ALLOWED_ORIGINS` to the exact frontend origin. For
 example, the Render backend for the Vercel app should use:
@@ -199,6 +237,7 @@ make lint
 make typecheck
 make test
 make test-e2e
+make evaluate-product-matcher
 make check
 ```
 

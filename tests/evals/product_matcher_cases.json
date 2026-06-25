@@ -1,0 +1,312 @@
+[
+  {
+    "name": "exact model punctuation",
+    "product": {
+      "brand": "Sony",
+      "product_name": "Sony WH-1000XM5 Wireless Headphones",
+      "product_type": "headphones",
+      "model_number": "WH-1000XM5"
+    },
+    "listing": {
+      "title": "Sony WH 1000 XM5 Wireless Noise Canceling Headphones",
+      "brand": "Sony",
+      "model_number": "WH 1000 XM5"
+    },
+    "expected_status": "exact_match",
+    "expected_conflicts": [],
+    "eligible_for_price_aggregation": true,
+    "expected_aggregation_group": "primary"
+  },
+  {
+    "name": "brand alias exact",
+    "product": {
+      "brand": "Hewlett Packard",
+      "product_name": "HP LaserJet Pro M404dn Printer",
+      "product_type": "printer",
+      "model_number": "M404dn"
+    },
+    "listing": {
+      "title": "HP LaserJet Pro M404dn Monochrome Printer",
+      "brand": "HP",
+      "model_number": "M404dn"
+    },
+    "expected_status": "exact_match",
+    "expected_conflicts": [],
+    "eligible_for_price_aggregation": true,
+    "expected_aggregation_group": "primary"
+  },
+  {
+    "name": "title word order probable",
+    "product": {
+      "product_name": "Portable Rechargeable Desk Lamp",
+      "product_type": "lamp"
+    },
+    "listing": {
+      "title": "Rechargeable Portable LED Desk Lamp"
+    },
+    "expected_status": "probable_match",
+    "expected_conflicts": [],
+    "eligible_for_price_aggregation": true,
+    "expected_aggregation_group": "primary"
+  },
+  {
+    "name": "adjacent model generation conflict",
+    "product": {
+      "brand": "Sony",
+      "product_name": "Sony WH-1000XM5 Wireless Headphones",
+      "product_type": "headphones",
+      "model_number": "WH-1000XM5"
+    },
+    "listing": {
+      "title": "Sony WH-1000XM4 Wireless Headphones",
+      "brand": "Sony",
+      "model_number": "WH-1000XM4"
+    },
+    "expected_status": "rejected",
+    "expected_conflicts": ["MODEL_NUMBER_MISMATCH"],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": null
+  },
+  {
+    "name": "part number conflict",
+    "product": {
+      "brand": "Acme",
+      "product_name": "Acme Filter Cartridge",
+      "product_type": "filter",
+      "manufacturer_part_number": "AC-200"
+    },
+    "listing": {
+      "title": "Acme Filter Cartridge AC-201",
+      "brand": "Acme",
+      "manufacturer_part_number": "AC-201"
+    },
+    "expected_status": "rejected",
+    "expected_conflicts": ["IDENTIFIER_MISMATCH"],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": null
+  },
+  {
+    "name": "brand conflict",
+    "product": {
+      "brand": "Sony",
+      "product_name": "Sony WH-1000XM5 Wireless Headphones",
+      "product_type": "headphones",
+      "model_number": "WH-1000XM5"
+    },
+    "listing": {
+      "title": "Bose WH-1000XM5 Wireless Headphones",
+      "brand": "Bose",
+      "model_number": "WH-1000XM5"
+    },
+    "expected_status": "rejected",
+    "expected_conflicts": ["BRAND_MISMATCH"],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": null
+  },
+  {
+    "name": "base versus pro variant",
+    "product": {
+      "brand": "Apple",
+      "product_name": "Apple iPhone 15 Pro 256GB",
+      "product_type": "phone",
+      "variant": "256gb"
+    },
+    "listing": {
+      "title": "Apple iPhone 15 256GB",
+      "brand": "Apple",
+      "variant": "256gb"
+    },
+    "expected_status": "uncertain",
+    "expected_conflicts": ["VARIANT_MISMATCH"],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": "alternate_variant"
+  },
+  {
+    "name": "storage variant conflict",
+    "product": {
+      "brand": "Apple",
+      "product_name": "Apple iPhone 15 Pro 256GB",
+      "product_type": "phone",
+      "variant": "256gb"
+    },
+    "listing": {
+      "title": "Apple iPhone 15 Pro 128GB",
+      "brand": "Apple",
+      "variant": "128gb"
+    },
+    "expected_status": "uncertain",
+    "expected_conflicts": ["VARIANT_MISMATCH"],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": "alternate_variant"
+  },
+  {
+    "name": "replacement accessory",
+    "product": {
+      "brand": "Oral-B",
+      "product_name": "Oral-B Pro 1000 Electric Toothbrush",
+      "product_type": "electric toothbrush"
+    },
+    "listing": {
+      "title": "Replacement brush heads compatible with Oral-B Pro 1000"
+    },
+    "expected_status": "rejected",
+    "expected_conflicts": ["ACCESSORY_MISMATCH"],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": null
+  },
+  {
+    "name": "protective case accessory",
+    "product": {
+      "brand": "Canon",
+      "product_name": "Canon EOS R50 Camera",
+      "product_type": "camera"
+    },
+    "listing": {
+      "title": "Protective case for Canon EOS R50 Camera"
+    },
+    "expected_status": "rejected",
+    "expected_conflicts": ["ACCESSORY_MISMATCH"],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": null
+  },
+  {
+    "name": "charger accessory",
+    "product": {
+      "brand": "Nintendo",
+      "product_name": "Nintendo Switch Console",
+      "product_type": "game console"
+    },
+    "listing": {
+      "title": "USB-C charger for Nintendo Switch Console"
+    },
+    "expected_status": "rejected",
+    "expected_conflicts": ["ACCESSORY_MISMATCH"],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": null
+  },
+  {
+    "name": "cable accessory",
+    "product": {
+      "brand": "Sony",
+      "product_name": "Sony Alpha Camera",
+      "product_type": "camera"
+    },
+    "listing": {
+      "title": "USB cable for Sony Alpha Camera"
+    },
+    "expected_status": "rejected",
+    "expected_conflicts": ["ACCESSORY_MISMATCH"],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": null
+  },
+  {
+    "name": "single versus two pack",
+    "product": {
+      "product_name": "Portable Rechargeable Desk Lamp",
+      "product_type": "lamp"
+    },
+    "listing": {
+      "title": "Portable Rechargeable Desk Lamp Pack of 2",
+      "pack_quantity": 2
+    },
+    "expected_status": "uncertain",
+    "expected_conflicts": ["PACKAGE_QUANTITY_MISMATCH"],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": "alternate_package"
+  },
+  {
+    "name": "volume difference",
+    "product": {
+      "brand": "Acme",
+      "product_name": "Acme Hydrating Shampoo 500 mL",
+      "product_type": "shampoo",
+      "variant": "500ml"
+    },
+    "listing": {
+      "title": "Acme Hydrating Shampoo 250 mL",
+      "brand": "Acme",
+      "variant": "250ml"
+    },
+    "expected_status": "uncertain",
+    "expected_conflicts": ["VARIANT_MISMATCH"],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": "alternate_variant"
+  },
+  {
+    "name": "bundle offer",
+    "product": {
+      "brand": "Canon",
+      "product_name": "Canon EOS R50 Camera",
+      "product_type": "camera"
+    },
+    "listing": {
+      "title": "Canon EOS R50 Camera with lens kit bundle"
+    },
+    "expected_status": "rejected",
+    "expected_conflicts": ["BUNDLE_MISMATCH"],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": "alternate_bundle"
+  },
+  {
+    "name": "open box condition",
+    "product": {
+      "brand": "Apple",
+      "product_name": "Apple AirPods Pro 2",
+      "product_type": "earbuds"
+    },
+    "listing": {
+      "title": "Open box Apple AirPods Pro 2",
+      "condition": "open_box"
+    },
+    "expected_status": "rejected",
+    "expected_conflicts": ["CONDITION_MISMATCH"],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": "alternate_condition"
+  },
+  {
+    "name": "refurbished condition",
+    "product": {
+      "brand": "Apple",
+      "product_name": "Apple iPad Air 11-inch",
+      "product_type": "tablet"
+    },
+    "listing": {
+      "title": "Certified refurbished Apple iPad Air 11-inch",
+      "condition": "refurbished"
+    },
+    "expected_status": "rejected",
+    "expected_conflicts": ["CONDITION_MISMATCH"],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": "alternate_condition"
+  },
+  {
+    "name": "used for parts condition",
+    "product": {
+      "brand": "Dyson",
+      "product_name": "Dyson V15 Vacuum",
+      "product_type": "vacuum"
+    },
+    "listing": {
+      "title": "Dyson V15 Vacuum for parts only",
+      "condition": "for_parts"
+    },
+    "expected_status": "rejected",
+    "expected_conflicts": ["CONDITION_MISMATCH"],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": "alternate_condition"
+  },
+  {
+    "name": "ambiguous generic product",
+    "product": {
+      "product_name": "Wireless Headphones",
+      "product_type": "headphones"
+    },
+    "listing": {
+      "title": "Bluetooth audio headset"
+    },
+    "expected_status": "rejected",
+    "expected_conflicts": [],
+    "eligible_for_price_aggregation": false,
+    "expected_aggregation_group": null
+  }
+]

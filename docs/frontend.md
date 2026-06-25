@@ -8,6 +8,9 @@ Component structure:
 - `ImageDropzone`: drag/drop, file picker, previews, removal, object URL cleanup
 - `AnalysisProgress`: empty, loading, success, partial-success, and error states
 - `ProductProfilePanel`: product profile sections and claim warnings
+- `MarketplaceSnapshotPanel`: validated marketplace rankings, price ranges,
+  listing match groups, conflict explanations, and local review controls for
+  uncertain listings
 - `KeywordClusterSummary`: ranked cluster cards
 - `KeywordFilters`: text/category/intent/score filters and sorting
 - `KeywordTable`: keyword list with expandable evidence details
@@ -16,5 +19,8 @@ Component structure:
 
 API access is isolated in `apps/web/lib/api-client.ts`. The production path calls `NEXT_PUBLIC_API_BASE_URL`. Fixture mode is enabled with `NEXT_PUBLIC_USE_FIXTURES=true` and loads `public/fixtures/mock-run.json`.
 
-The frontend performs display filtering and sorting only. Perception, scoring, classification, clustering, and evidence validation remain backend responsibilities.
-
+The frontend performs display filtering, sorting, and local review overrides
+only. Perception, marketplace matching, price aggregation, keyword scoring,
+classification, clustering, and evidence validation remain backend
+responsibilities. Local marketplace review actions are UI state only in this
+milestone and do not mutate raw provider observations.

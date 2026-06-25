@@ -24,6 +24,17 @@ export function moneyRange(
   return `Up to ${formatter.format(high ?? 0)}`;
 }
 
+export function money(value: number | null, currency: string | null): string {
+  if (value === null || currency === null) {
+    return "Unknown";
+  }
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 2,
+  }).format(value);
+}
+
 export function compactNumber(value: number | null): string {
   if (value === null) {
     return "0";

@@ -23,3 +23,29 @@ make test-evals
 
 The MVP runner verifies fixture coverage and records the metrics that future prompt/model changes must track: schema-valid response rate, attribute precision, unsupported-claim rate, evidence coverage, keyword relevance, duplicate rate, category accuracy, latency, and cost per run.
 
+## Product Matcher Evaluation
+
+Product-validation fixtures live in `tests/evals/product_matcher_cases.json`.
+They cover exact model matches, brand aliases, title word-order differences,
+model and part-number conflicts, accessories, package differences, bundles,
+condition differences, variant differences, and ambiguous generic products.
+
+Run:
+
+```bash
+make evaluate-product-matcher
+```
+
+The command reports accepted-match precision, recall, false-match rate, false
+confident-match rate, false-rejection rate, uncertain rate, conflict-specific
+accuracies, average matching latency, and p95 matching latency.
+
+Current fixture baseline:
+
+- 19 cases.
+- Accepted-match precision: 1.0.
+- False confident-match rate: 0.0.
+- p95 matching latency: about 0.12 ms on the local test run.
+
+The fixture set is intentionally small, so these are smoke thresholds rather
+than statistically meaningful production estimates.

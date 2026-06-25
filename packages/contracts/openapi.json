@@ -441,6 +441,98 @@
             "type": "string",
             "format": "date-time",
             "title": "Created At"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "platform": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Platform"
+          },
+          "listing_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Listing Id"
+          },
+          "field_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Field Name"
+          },
+          "observed_value": {
+            "title": "Observed Value"
+          },
+          "observed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observed At"
+          },
+          "provider_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Run Id"
+          },
+          "normalization_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Normalization Version"
+          },
+          "matcher_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matcher Version"
           }
         },
         "additionalProperties": false,
@@ -699,6 +791,23 @@
         ],
         "title": "KeywordIntent"
       },
+      "MarketplaceListingValidation": {
+        "properties": {
+          "listing": {
+            "$ref": "#/components/schemas/NormalizedMarketplaceListing"
+          },
+          "match_result": {
+            "$ref": "#/components/schemas/ProductMatchResult"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "listing",
+          "match_result"
+        ],
+        "title": "MarketplaceListingValidation"
+      },
       "MarketplacePlatformEstimate": {
         "properties": {
           "rank": {
@@ -804,6 +913,29 @@
             "minItems": 1,
             "title": "Evidence Ids"
           },
+          "source_count": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Source Count",
+            "default": 1
+          },
+          "validated_listing_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Validated Listing Count",
+            "default": 0
+          },
+          "matcher_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matcher Version"
+          },
           "confidence": {
             "type": "number",
             "maximum": 1.0,
@@ -857,6 +989,18 @@
             ],
             "title": "Price Low"
           },
+          "price_median": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Price Median"
+          },
           "price_high": {
             "anyOf": [
               {
@@ -887,6 +1031,52 @@
               }
             ],
             "title": "Observed Offer Count"
+          },
+          "source_count": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Source Count",
+            "default": 1
+          },
+          "observation_started_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observation Started At"
+          },
+          "observation_ended_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Observation Ended At"
+          },
+          "aggregation_group": {
+            "type": "string",
+            "title": "Aggregation Group",
+            "default": "primary"
+          },
+          "matcher_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matcher Version"
           },
           "price_basis": {
             "type": "string",
@@ -987,13 +1177,39 @@
             "minItems": 1,
             "title": "Limitations"
           },
+          "product_identity": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductIdentity"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "validation_summary": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MarketplaceValidationSummary"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "validated_listings": {
+            "items": {
+              "$ref": "#/components/schemas/MarketplaceListingValidation"
+            },
+            "type": "array",
+            "title": "Validated Listings"
+          },
           "platform_rankings": {
             "items": {
               "$ref": "#/components/schemas/MarketplacePlatformEstimate"
             },
             "type": "array",
             "maxItems": 10,
-            "minItems": 1,
             "title": "Platform Rankings"
           },
           "price_estimates": {
@@ -1002,7 +1218,6 @@
             },
             "type": "array",
             "maxItems": 10,
-            "minItems": 1,
             "title": "Price Estimates"
           },
           "warnings": {
@@ -1029,18 +1244,673 @@
           "is_live_data",
           "methodology",
           "limitations",
-          "platform_rankings",
-          "price_estimates",
           "overall_confidence"
         ],
         "title": "MarketplaceSnapshot"
+      },
+      "MarketplaceValidationSummary": {
+        "properties": {
+          "total_candidates": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total Candidates"
+          },
+          "exact_match_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Exact Match Count"
+          },
+          "probable_match_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Probable Match Count"
+          },
+          "uncertain_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Uncertain Count"
+          },
+          "rejected_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Rejected Count"
+          },
+          "primary_eligible_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Primary Eligible Count"
+          },
+          "alternate_variant_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Alternate Variant Count"
+          },
+          "alternate_package_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Alternate Package Count"
+          },
+          "alternate_condition_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Alternate Condition Count"
+          },
+          "matcher_version": {
+            "type": "string",
+            "title": "Matcher Version"
+          },
+          "scoring_policy_version": {
+            "type": "string",
+            "title": "Scoring Policy Version"
+          },
+          "normalization_version": {
+            "type": "string",
+            "title": "Normalization Version"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "total_candidates",
+          "exact_match_count",
+          "probable_match_count",
+          "uncertain_count",
+          "rejected_count",
+          "primary_eligible_count",
+          "alternate_variant_count",
+          "alternate_package_count",
+          "alternate_condition_count",
+          "matcher_version",
+          "scoring_policy_version",
+          "normalization_version"
+        ],
+        "title": "MarketplaceValidationSummary"
+      },
+      "MatchConflict": {
+        "properties": {
+          "code": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Code"
+          },
+          "field": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Field"
+          },
+          "expected": {
+            "title": "Expected"
+          },
+          "observed": {
+            "title": "Observed"
+          },
+          "severity": {
+            "$ref": "#/components/schemas/MatchConflictSeverity"
+          },
+          "explanation": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Explanation"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "code",
+          "field",
+          "severity",
+          "explanation"
+        ],
+        "title": "MatchConflict"
+      },
+      "MatchConflictSeverity": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high"
+        ],
+        "title": "MatchConflictSeverity"
+      },
+      "MatchFeatureScores": {
+        "properties": {
+          "identifier_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Identifier Score"
+          },
+          "brand_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand Score"
+          },
+          "model_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Score"
+          },
+          "title_score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Title Score"
+          },
+          "important_token_score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Important Token Score"
+          },
+          "product_type_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Type Score"
+          },
+          "category_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category Score"
+          },
+          "variant_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variant Score"
+          },
+          "package_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Package Score"
+          },
+          "condition_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition Score"
+          },
+          "image_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Image Score"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "title_score",
+          "important_token_score"
+        ],
+        "title": "MatchFeatureScores"
+      },
+      "NormalizedMarketplaceListing": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Provider"
+          },
+          "platform": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Platform"
+          },
+          "listing_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Listing Id"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Title"
+          },
+          "normalized_title": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Normalized Title"
+          },
+          "description_excerpt": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Description Excerpt"
+          },
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand"
+          },
+          "model_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Number"
+          },
+          "manufacturer_part_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer Part Number"
+          },
+          "gtin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gtin"
+          },
+          "upc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upc"
+          },
+          "ean": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ean"
+          },
+          "isbn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isbn"
+          },
+          "asin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asin"
+          },
+          "product_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Type"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "variant": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variant"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size"
+          },
+          "pack_quantity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pack Quantity"
+          },
+          "unit_quantity": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Quantity"
+          },
+          "unit_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Type"
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductCondition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "item_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Price"
+          },
+          "shipping_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Shipping Price"
+          },
+          "mandatory_fees": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Mandatory Fees"
+          },
+          "discount": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Discount"
+          },
+          "landed_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landed Price"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 3,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "image_urls": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Image Urls"
+          },
+          "seller_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Seller Name"
+          },
+          "stock_status": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Stock Status"
+          },
+          "rating": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Rating"
+          },
+          "review_count": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Review Count"
+          },
+          "raw_rank_signals": {
+            "items": {
+              "$ref": "#/components/schemas/RankSignal"
+            },
+            "type": "array",
+            "title": "Raw Rank Signals"
+          },
+          "raw_provider_payload_reference": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Raw Provider Payload Reference"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "provider",
+          "platform",
+          "listing_id",
+          "title",
+          "normalized_title"
+        ],
+        "title": "NormalizedMarketplaceListing"
       },
       "PerceptionRun": {
         "properties": {
           "schema_version": {
             "type": "string",
             "title": "Schema Version",
-            "default": "2026-06-24.marketplace_snapshot.v1"
+            "default": "2026-06-25.marketplace_validation.v2"
           },
           "run_id": {
             "type": "string",
@@ -1207,6 +2077,375 @@
           "description"
         ],
         "title": "ProductAnalysisRequest"
+      },
+      "ProductCondition": {
+        "type": "string",
+        "enum": [
+          "new",
+          "open_box",
+          "refurbished",
+          "used_like_new",
+          "used_good",
+          "used_acceptable",
+          "for_parts",
+          "unknown"
+        ],
+        "title": "ProductCondition"
+      },
+      "ProductIdentity": {
+        "properties": {
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand"
+          },
+          "manufacturer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer"
+          },
+          "product_name": {
+            "type": "string",
+            "title": "Product Name"
+          },
+          "product_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Type"
+          },
+          "category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Category"
+          },
+          "model_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Number"
+          },
+          "manufacturer_part_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer Part Number"
+          },
+          "gtin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Gtin"
+          },
+          "upc": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Upc"
+          },
+          "ean": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Ean"
+          },
+          "isbn": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Isbn"
+          },
+          "asin": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Asin"
+          },
+          "variant": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Variant"
+          },
+          "color": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Color"
+          },
+          "size": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Size"
+          },
+          "material": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Material"
+          },
+          "pack_quantity": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 1.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Pack Quantity"
+          },
+          "unit_quantity": {
+            "anyOf": [
+              {
+                "type": "number",
+                "exclusiveMinimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Quantity"
+          },
+          "unit_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Unit Type"
+          },
+          "expected_condition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductCondition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "normalized_title": {
+            "type": "string",
+            "title": "Normalized Title"
+          },
+          "aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Aliases"
+          },
+          "excluded_terms": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Excluded Terms"
+          },
+          "source_evidence": {
+            "items": {
+              "$ref": "#/components/schemas/EvidenceRecord"
+            },
+            "type": "array",
+            "title": "Source Evidence"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_name",
+          "normalized_title"
+        ],
+        "title": "ProductIdentity"
+      },
+      "ProductMatchResult": {
+        "properties": {
+          "listing_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Listing Id"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProductMatchStatus"
+          },
+          "score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Score"
+          },
+          "matched_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Matched Fields"
+          },
+          "unknown_fields": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Unknown Fields"
+          },
+          "conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/MatchConflict"
+            },
+            "type": "array",
+            "title": "Conflicts"
+          },
+          "feature_scores": {
+            "$ref": "#/components/schemas/MatchFeatureScores"
+          },
+          "reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reason Codes"
+          },
+          "human_summary": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Human Summary"
+          },
+          "eligible_for_price_aggregation": {
+            "type": "boolean",
+            "title": "Eligible For Price Aggregation"
+          },
+          "aggregation_group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregation Group"
+          },
+          "requires_human_review": {
+            "type": "boolean",
+            "title": "Requires Human Review"
+          },
+          "matcher_version": {
+            "type": "string",
+            "title": "Matcher Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "listing_id",
+          "status",
+          "score",
+          "feature_scores",
+          "human_summary",
+          "eligible_for_price_aggregation",
+          "requires_human_review",
+          "matcher_version"
+        ],
+        "title": "ProductMatchResult"
+      },
+      "ProductMatchStatus": {
+        "type": "string",
+        "enum": [
+          "exact_match",
+          "probable_match",
+          "uncertain",
+          "rejected"
+        ],
+        "title": "ProductMatchStatus"
       },
       "ProductProfile": {
         "properties": {
@@ -1494,6 +2733,37 @@
         "additionalProperties": false,
         "type": "object",
         "title": "ProviderUsage"
+      },
+      "RankSignal": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Name"
+          },
+          "value": {
+            "type": "number",
+            "title": "Value"
+          },
+          "source": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "value"
+        ],
+        "title": "RankSignal"
       },
       "ScoreComponents": {
         "properties": {

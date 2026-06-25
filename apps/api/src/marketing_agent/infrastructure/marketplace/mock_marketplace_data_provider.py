@@ -4,33 +4,37 @@ from datetime import UTC, datetime
 
 from marketing_agent.domain.models.evidence import EvidenceRecord, EvidenceSource
 from marketing_agent.domain.models.marketplace import (
-    MarketplacePlatformEstimate,
-    MarketplacePriceEstimate,
-    MarketplaceSnapshot,
+    NormalizedMarketplaceListing,
+    ProductCondition,
+    RankSignal,
 )
 from marketing_agent.domain.ports.marketplace_data_provider import (
     MarketplaceDataProviderRequest,
     MarketplaceDataProviderResult,
 )
 from marketing_agent.domain.services.marketplace_query import build_marketplace_search_query
+from marketing_agent.domain.services.product_matcher import (
+    ProductMatcherConfig,
+    build_validated_marketplace_snapshot,
+    decimal_or_none,
+    normalize_text,
+)
 
 
 class MockMarketplaceDataProvider:
+    def __init__(self, *, matcher_config: ProductMatcherConfig | None = None) -> None:
+        self.matcher_config = matcher_config or ProductMatcherConfig()
+
     async def fetch_snapshot(
         self, request: MarketplaceDataProviderRequest
     ) -> MarketplaceDataProviderResult:
         product_name = _product_name(request)
-        category = (
-            request.product_profile.category.value
-            if request.product_profile.category
-            else "Product"
-        )
         query = build_marketplace_search_query(
             request=request.request,
             profile=request.product_profile,
         )
         now = datetime.now(UTC)
-        evidence = [
+        provider_evidence = [
             EvidenceRecord(
                 id="ev-marketplace-mock-1",
                 source=EvidenceSource.MARKETPLACE_PROVIDER,
@@ -42,92 +46,155 @@ class MockMarketplaceDataProvider:
                 quote=query,
                 confidence=1.0,
                 created_at=now,
+                provider="mock",
+                platform="mock_fixture",
+                provider_run_id=query,
             )
         ]
-        evidence_ids = ["ev-marketplace-mock-1"]
-        platforms = [
-            ("Amazon", "marketplace", 0.9, 18.99, 39.99, 8, 7900),
-            ("Walmart Marketplace", "marketplace", 0.78, 16.99, 34.99, 5, 640),
-            ("AliExpress", "marketplace", 0.74, 8.99, 24.99, 4, 2100),
-            ("eBay", "marketplace", 0.66, 11.99, 32.99, 3, 330),
-            ("Temu", "marketplace", 0.64, 7.99, 21.99, 3, 1800),
-            ("Target", "retailer", 0.58, 19.99, 44.99, 2, 180),
-            ("Wayfair", "specialty", 0.53, 24.99, 59.99, 2, 520),
-            ("Etsy", "marketplace", 0.45, 22.0, 68.0, 2, 95),
-            ("TikTok Shop", "social_commerce", 0.43, 12.99, 35.99, 1, 0),
-            ("Independent Shopify stores", "brand_store", 0.38, 19.99, 49.99, 1, 0),
-        ]
-        rankings: list[MarketplacePlatformEstimate] = []
-        prices: list[MarketplacePriceEstimate] = []
-        for rank, (
-            platform,
-            platform_type,
-            score,
-            low,
-            high,
-            offer_count,
-            review_count,
-        ) in enumerate(platforms, start=1):
-            search_phrase = f"{query} {platform}".strip()
-            rankings.append(
-                MarketplacePlatformEstimate(
-                    rank=rank,
-                    platform=platform,
-                    platform_type=platform_type,
-                    data_source="mock_marketplace_provider",
-                    estimated_sales_potential_score=score,
-                    observed_offer_count=offer_count,
-                    observed_review_count=review_count,
-                    observed_units_sold=None,
-                    observed_sales_signal=None,
-                    sales_rank_basis=(
-                        f"Mock ranking shaped like real marketplace data for category '{category}'."
-                    ),
-                    listing_search_phrase=search_phrase,
-                    source_url=None,
-                    evidence_ids=evidence_ids,
-                    confidence=0.5 if rank <= 5 else 0.4,
-                    risk_flags=["mock_data", "not_live_marketplace_data"],
-                )
-            )
-            prices.append(
-                MarketplacePriceEstimate(
-                    platform=platform,
-                    data_source="mock_marketplace_provider",
-                    price_low=low,
-                    price_high=high,
-                    currency="USD",
-                    observed_offer_count=offer_count,
-                    price_basis="Mock comparable-listing price range for UI and contract tests.",
-                    listing_search_phrase=search_phrase,
-                    source_url=None,
-                    evidence_ids=evidence_ids,
-                    confidence=0.5 if rank <= 5 else 0.4,
-                    risk_flags=["mock_data", "not_live_marketplace_data"],
-                )
-            )
-        snapshot = MarketplaceSnapshot(
-            title=f"Marketplace Snapshot for {product_name}",
-            summary="Mock marketplace ranking and price ranges for development.",
+        listings = _fixture_listings(product_name=product_name, query=query, observed_at=now)
+        snapshot, validation_evidence = build_validated_marketplace_snapshot(
+            request=request.request,
+            profile=request.product_profile,
+            listings=listings,
             source_provider="mock",
             source_query=query,
-            retrieved_at=now,
+            title=f"Marketplace Snapshot for {product_name}",
+            summary="Mock marketplace ranking and price ranges after deterministic validation.",
             is_live_data=False,
-            methodology="Deterministic fixture shaped like live marketplace-provider output.",
+            methodology=(
+                "Deterministic fixture shaped like provider output. Candidate listings are "
+                "normalized, matched against the canonical product identity, and only validated "
+                "primary matches enter price and platform aggregation."
+            ),
             limitations=[
                 "No marketplace APIs, retailer feeds, web search, or scraping were used.",
                 "Use SerpAPI or another marketplace provider for live data.",
             ],
-            platform_rankings=rankings,
-            price_estimates=prices,
-            warnings=["Mock marketplace data used; not suitable for production decisions."],
-            overall_confidence=0.5,
+            base_warnings=["Mock marketplace data used; not suitable for production decisions."],
+            retrieved_at=now,
+            matcher_config=self.matcher_config,
         )
         return MarketplaceDataProviderResult(
             snapshot=snapshot,
-            evidence=evidence,
+            evidence=[*provider_evidence, *validation_evidence],
             warnings=snapshot.warnings,
         )
+
+
+def _fixture_listings(
+    *,
+    product_name: str,
+    query: str,
+    observed_at: datetime,
+) -> list[NormalizedMarketplaceListing]:
+    platforms = [
+        ("Amazon", 18.99, 39.99, 8, 7900),
+        ("Walmart Marketplace", 16.99, 34.99, 5, 640),
+        ("AliExpress", 8.99, 24.99, 4, 2100),
+        ("eBay", 11.99, 32.99, 3, 330),
+        ("Temu", 7.99, 21.99, 3, 1800),
+        ("Target", 19.99, 44.99, 2, 180),
+        ("Wayfair", 24.99, 59.99, 2, 520),
+        ("Etsy", 22.0, 68.0, 2, 95),
+        ("TikTok Shop", 12.99, 35.99, 1, 0),
+        ("Independent Shopify stores", 19.99, 49.99, 1, 0),
+    ]
+    listings: list[NormalizedMarketplaceListing] = []
+    for rank, (platform, low, high, offer_count, review_count) in enumerate(platforms, start=1):
+        for index in range(offer_count):
+            price_span = high - low
+            price = low + (price_span * (index / max(offer_count - 1, 1)))
+            listings.append(
+                _listing(
+                    platform=platform,
+                    listing_id=f"mock-{rank}-{index + 1}",
+                    title=f"{product_name} {query}".strip(),
+                    item_price=round(price, 2),
+                    review_count=max(review_count // offer_count, 0),
+                    position=rank + index,
+                    observed_at=observed_at,
+                )
+            )
+
+    listings.extend(
+        [
+            _listing(
+                platform="Amazon",
+                listing_id="mock-accessory-1",
+                title=f"Replacement charger for {product_name}",
+                item_price=9.99,
+                review_count=82,
+                position=44,
+                observed_at=observed_at,
+            ),
+            _listing(
+                platform="Walmart Marketplace",
+                listing_id="mock-pack-1",
+                title=f"{product_name} - Pack of 2",
+                item_price=36.99,
+                review_count=42,
+                position=45,
+                observed_at=observed_at,
+                pack_quantity=2,
+            ),
+            _listing(
+                platform="eBay",
+                listing_id="mock-condition-1",
+                title=f"Open box {product_name}",
+                item_price=14.99,
+                review_count=12,
+                position=46,
+                observed_at=observed_at,
+                condition=ProductCondition.OPEN_BOX,
+            ),
+            _listing(
+                platform="Etsy",
+                listing_id="mock-uncertain-1",
+                title="Rechargeable reading light",
+                item_price=21.99,
+                review_count=8,
+                position=47,
+                observed_at=observed_at,
+            ),
+        ]
+    )
+    return listings
+
+
+def _listing(
+    *,
+    platform: str,
+    listing_id: str,
+    title: str,
+    item_price: float,
+    review_count: int,
+    position: int,
+    observed_at: datetime,
+    condition: ProductCondition = ProductCondition.NEW,
+    pack_quantity: int | None = None,
+) -> NormalizedMarketplaceListing:
+    price = decimal_or_none(item_price)
+    return NormalizedMarketplaceListing(
+        provider="mock",
+        platform=platform,
+        listing_id=listing_id,
+        source_url=None,
+        title=title,
+        normalized_title=normalize_text(title),
+        description_excerpt=None,
+        condition=condition,
+        item_price=price,
+        landed_price=price,
+        currency="USD",
+        image_urls=[],
+        seller_name=platform,
+        review_count=review_count,
+        raw_rank_signals=[
+            RankSignal(name="position", value=float(position), source="mock_fixture")
+        ],
+        pack_quantity=pack_quantity,
+        observed_at=observed_at,
+    )
 
 
 def _product_name(request: MarketplaceDataProviderRequest) -> str:

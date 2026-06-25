@@ -25,6 +25,15 @@ class EvidenceRecord(BaseModel):
     quote: str | None = Field(default=None, max_length=500)
     confidence: float = Field(ge=0.0, le=1.0)
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    provider: str | None = None
+    platform: str | None = None
+    listing_id: str | None = None
+    field_name: str | None = None
+    observed_value: str | None = None
+    observed_at: datetime | None = None
+    provider_run_id: str | None = None
+    normalization_version: str | None = None
+    matcher_version: str | None = None
 
 
 class EvidenceLinkedText(BaseModel):

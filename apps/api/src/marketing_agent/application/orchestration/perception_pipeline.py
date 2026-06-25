@@ -97,8 +97,8 @@ class PerceptionPipeline:
         validate_marketplace_evidence(profile, marketplace_result.snapshot)
         self._complete_stage(
             stages,
-            "fetch_marketplace_snapshot",
-            "Marketplace snapshot fetched and normalized.",
+            "fetch_and_validate_marketplace_snapshot",
+            "Marketplace candidates fetched, normalized, matched, and aggregated.",
         )
 
         generated = generate_keyword_candidates(profile)

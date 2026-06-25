@@ -9,7 +9,7 @@ from marketing_agent.domain.models.keyword import KeywordCandidate, KeywordClust
 from marketing_agent.domain.models.marketplace import MarketplaceSnapshot
 from marketing_agent.domain.models.product import ProductProfile
 
-SCHEMA_VERSION = "2026-06-24.marketplace_snapshot.v1"
+SCHEMA_VERSION = "2026-06-25.marketplace_validation.v2"
 
 
 class StageState(StrEnum):
