@@ -66,6 +66,24 @@ class ProductMatchStatus(StrEnum):
     REJECTED = "rejected"
 
 
+class BrandRole(StrEnum):
+    OFFICIAL_BRAND = "official_brand"
+    MANUFACTURER_BRAND = "manufacturer_brand"
+    THIRD_PARTY_BRAND = "third_party_brand"
+    COMPATIBILITY_TARGET = "compatibility_target"
+    UNKNOWN = "unknown"
+
+
+class ProductRelationship(StrEnum):
+    OFFICIAL_EXACT_PRODUCT = "official_exact_product"
+    OFFICIAL_SAME_PRODUCT_FAMILY = "official_same_product_family"
+    LICENSED_THIRD_PARTY_ALTERNATIVE = "licensed_third_party_alternative"
+    GENERIC_COMPATIBLE_ALTERNATIVE = "generic_compatible_alternative"
+    ACCESSORY_OR_REPLACEMENT = "accessory_or_replacement"
+    UNRELATED = "unrelated"
+    UNKNOWN = "unknown"
+
+
 class RankSignal(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -79,7 +97,10 @@ class ProductIdentity(BaseModel):
 
     brand: str | None = None
     manufacturer: str | None = None
+    sub_brand: str | None = None
     product_name: str
+    normalized_product_name: str
+    official_product_line: str | None = None
     product_type: str | None = None
     category: str | None = None
     model_number: str | None = None
@@ -98,6 +119,10 @@ class ProductIdentity(BaseModel):
     unit_type: str | None = None
     expected_condition: ProductCondition | None = None
     normalized_title: str
+    allowed_brand_aliases: list[str] = Field(default_factory=list)
+    allowed_manufacturer_aliases: list[str] = Field(default_factory=list)
+    official_name_patterns: list[str] = Field(default_factory=list)
+    target_is_official_product: bool = False
     aliases: list[str] = Field(default_factory=list)
     excluded_terms: list[str] = Field(default_factory=list)
     source_evidence: list[EvidenceRecord] = Field(default_factory=_evidence_record_list)
@@ -114,6 +139,10 @@ class NormalizedMarketplaceListing(BaseModel):
     normalized_title: str = Field(min_length=1)
     description_excerpt: str | None = None
     brand: str | None = None
+    provider_brand: str | None = None
+    extracted_title_brand: str | None = None
+    manufacturer: str | None = None
+    product_line: str | None = None
     model_number: str | None = None
     manufacturer_part_number: str | None = None
     gtin: str | None = None
@@ -130,6 +159,11 @@ class NormalizedMarketplaceListing(BaseModel):
     unit_quantity: float | None = Field(default=None, gt=0.0)
     unit_type: str | None = None
     condition: ProductCondition | None = None
+    compatibility_targets: list[str] = Field(default_factory=list)
+    compatibility_phrases: list[str] = Field(default_factory=list)
+    claimed_official: bool | None = None
+    claimed_licensed: bool | None = None
+    brand_role: BrandRole | None = None
     item_price: Decimal | None = Field(default=None, ge=Decimal("0"))
     shipping_price: Decimal | None = Field(default=None, ge=Decimal("0"))
     mandatory_fees: Decimal | None = Field(default=None, ge=Decimal("0"))
@@ -184,6 +218,11 @@ class MatchFeatureScores(BaseModel):
 
     identifier_score: float | None = Field(default=None, ge=0.0, le=1.0)
     brand_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    brand_owner_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    manufacturer_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    official_product_line_score: float | None = Field(default=None, ge=0.0, le=1.0)
+    compatibility_only_penalty: float | None = Field(default=None, ge=0.0, le=1.0)
+    third_party_brand_penalty: float | None = Field(default=None, ge=0.0, le=1.0)
     model_score: float | None = Field(default=None, ge=0.0, le=1.0)
     title_score: float = Field(ge=0.0, le=1.0)
     important_token_score: float = Field(ge=0.0, le=1.0)
@@ -195,16 +234,32 @@ class MatchFeatureScores(BaseModel):
     image_score: float | None = Field(default=None, ge=0.0, le=1.0)
 
 
+class OfficialNameVerification(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    official_name_match: bool | None = None
+    official_product_line_match: bool | None = None
+    expected_brand_present_as_brand: bool | None = None
+    expected_brand_present_only_as_compatibility_target: bool = False
+    detected_listing_brand: str | None = None
+    detected_manufacturer: str | None = None
+    relationship: ProductRelationship
+    reason_codes: list[str] = Field(default_factory=list)
+    conflicts: list[MatchConflict] = Field(default_factory=_match_conflict_list)
+
+
 class ProductMatchResult(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
     listing_id: str = Field(min_length=1)
     status: ProductMatchStatus
+    relationship: ProductRelationship = ProductRelationship.UNKNOWN
     score: float = Field(ge=0.0, le=1.0)
     matched_fields: list[str] = Field(default_factory=list)
     unknown_fields: list[str] = Field(default_factory=list)
     conflicts: list[MatchConflict] = Field(default_factory=_match_conflict_list)
     feature_scores: MatchFeatureScores
+    official_name_verification: OfficialNameVerification | None = None
     reason_codes: list[str] = Field(default_factory=list)
     human_summary: str = Field(min_length=1)
     eligible_for_price_aggregation: bool
@@ -230,6 +285,11 @@ class MarketplaceValidationSummary(BaseModel):
     uncertain_count: int = Field(ge=0)
     rejected_count: int = Field(ge=0)
     primary_eligible_count: int = Field(ge=0)
+    official_match_count: int = Field(default=0, ge=0)
+    official_variant_count: int = Field(default=0, ge=0)
+    licensed_alternative_count: int = Field(default=0, ge=0)
+    compatible_alternative_count: int = Field(default=0, ge=0)
+    accessory_or_replacement_count: int = Field(default=0, ge=0)
     alternate_variant_count: int = Field(ge=0)
     alternate_package_count: int = Field(ge=0)
     alternate_condition_count: int = Field(ge=0)

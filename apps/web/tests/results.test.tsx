@@ -61,13 +61,18 @@ describe("result rendering", () => {
 
   it("renders marketplace validation groups and conflict explanations", async () => {
     render(<MarketplaceSnapshotPanel snapshot={run.marketplace_snapshot} />);
-    expect(screen.getByText("Validated matches")).toBeInTheDocument();
-    expect(screen.getAllByText("Needs review").length).toBeGreaterThan(0);
-    expect(screen.getByText("Rejected listings")).toBeInTheDocument();
+    expect(screen.getByText("Official matches")).toBeInTheDocument();
+    expect(screen.getByText("Official alternate variants")).toBeInTheDocument();
     expect(
-      screen.getByText("Alternate package quantities"),
+      screen.getByText("Licensed third-party alternatives"),
     ).toBeInTheDocument();
-    expect(screen.getByText("Alternate conditions")).toBeInTheDocument();
+    expect(
+      screen.getByText("Other compatible alternatives"),
+    ).toBeInTheDocument();
+    expect(screen.getAllByText("Needs review").length).toBeGreaterThan(0);
+    expect(
+      screen.getByRole("heading", { name: "Rejected" }),
+    ).toBeInTheDocument();
 
     await userEvent.click(
       screen.getAllByText("Why was this classified this way?")[0],
@@ -94,10 +99,10 @@ describe("result rendering", () => {
   it("supports local review override controls for uncertain listings", async () => {
     render(<MarketplaceSnapshotPanel snapshot={run.marketplace_snapshot} />);
     await userEvent.click(
-      screen.getByRole("button", { name: /accept as match/i }),
+      screen.getByRole("button", { name: /accept as official match/i }),
     );
     expect(
-      screen.getByText(/Local review override: Accepted/i),
+      screen.getByText(/Local review override: Official Match/i),
     ).toBeInTheDocument();
   });
 

@@ -6,6 +6,7 @@ from marketing_agent.domain.models.marketplace import (
     ProductCondition,
     ProductIdentity,
     ProductMatchStatus,
+    ProductRelationship,
     RankSignal,
 )
 from marketing_agent.domain.services.product_matcher import (
@@ -80,6 +81,82 @@ def test_brand_alias_can_match_exact_product() -> None:
     assert result.eligible_for_price_aggregation is True
 
 
+def test_compatible_xbox_phrase_does_not_count_as_official_brand() -> None:
+    result = match_listing(
+        _identity(
+            brand="Xbox",
+            manufacturer="Microsoft",
+            product_name="Microsoft Xbox Wireless Controller",
+            product_type="controller",
+            official_product_line="Xbox Wireless Controller",
+            allowed_brand_aliases=["Xbox", "Microsoft Xbox"],
+            allowed_manufacturer_aliases=["Microsoft", "Microsoft Corporation"],
+            official_name_patterns=[
+                "Xbox Wireless Controller",
+                "Xbox Elite Wireless Controller Series 2",
+            ],
+            target_is_official_product=True,
+        ),
+        _listing(title="JAYSUING Wireless Controller for Microsoft Xbox Series X/S"),
+    )
+
+    assert result.relationship == ProductRelationship.GENERIC_COMPATIBLE_ALTERNATIVE
+    assert result.status == ProductMatchStatus.REJECTED
+    assert result.eligible_for_price_aggregation is False
+    assert "EXPECTED_BRAND_ONLY_IN_COMPATIBILITY_PHRASE" in result.reason_codes
+    assert result.official_name_verification is not None
+    assert result.official_name_verification.detected_listing_brand == "JAYSUING"
+
+
+def test_known_licensed_third_party_xbox_controller_is_separated() -> None:
+    result = match_listing(
+        _identity(
+            brand="Xbox",
+            manufacturer="Microsoft",
+            product_name="Microsoft Xbox Wireless Controller",
+            product_type="controller",
+            official_product_line="Xbox Wireless Controller",
+            allowed_brand_aliases=["Xbox", "Microsoft Xbox"],
+            allowed_manufacturer_aliases=["Microsoft", "Microsoft Corporation"],
+            official_name_patterns=[
+                "Xbox Wireless Controller",
+                "Xbox Elite Wireless Controller Series 2",
+            ],
+            target_is_official_product=True,
+        ),
+        _listing(title="PowerA Wireless Controller for Xbox Series X|S"),
+    )
+
+    assert result.relationship == ProductRelationship.LICENSED_THIRD_PARTY_ALTERNATIVE
+    assert result.status == ProductMatchStatus.REJECTED
+    assert result.aggregation_group == "licensed_alternative"
+    assert result.eligible_for_price_aggregation is False
+
+
+def test_official_xbox_variant_is_not_mixed_into_exact_price_aggregation() -> None:
+    result = match_listing(
+        _identity(
+            brand="Xbox",
+            manufacturer="Microsoft",
+            product_name="Microsoft Xbox Wireless Controller",
+            product_type="controller",
+            official_product_line="Xbox Wireless Controller",
+            allowed_brand_aliases=["Xbox", "Microsoft Xbox"],
+            allowed_manufacturer_aliases=["Microsoft", "Microsoft Corporation"],
+            official_name_patterns=[
+                "Xbox Wireless Controller",
+                "Xbox Elite Wireless Controller Series 2",
+            ],
+            target_is_official_product=True,
+        ),
+        _listing(title="Xbox Wireless Controller - Robot White"),
+    )
+
+    assert result.relationship == ProductRelationship.OFFICIAL_SAME_PRODUCT_FAMILY
+    assert result.aggregation_group == "official_variant"
+    assert result.eligible_for_price_aggregation is False
+
+
 def test_accessory_listing_is_rejected_for_main_product() -> None:
     result = match_listing(
         _identity(product_name="Canon EOS R50 Camera", product_type="camera"),
@@ -135,11 +212,18 @@ def test_edition_variant_mismatch_requires_review() -> None:
 def _identity(
     *,
     brand: str | None = None,
+    manufacturer: str | None = None,
     product_name: str = "Sony WH-1000XM5 Wireless Headphones",
     product_type: str = "headphones",
     model_number: str | None = None,
     variant: str | None = None,
+    official_product_line: str | None = None,
+    allowed_brand_aliases: list[str] | None = None,
+    allowed_manufacturer_aliases: list[str] | None = None,
+    official_name_patterns: list[str] | None = None,
+    target_is_official_product: bool | None = None,
 ) -> ProductIdentity:
+    manufacturer_value = manufacturer or brand
     evidence = [
         EvidenceRecord(
             id="ev-test-identity",
@@ -151,14 +235,28 @@ def _identity(
     ]
     return ProductIdentity(
         brand=brand,
-        manufacturer=brand,
+        manufacturer=manufacturer_value,
         product_name=product_name,
+        normalized_product_name=normalize_text(product_name),
+        official_product_line=official_product_line,
         product_type=product_type,
         category=product_type,
         model_number=model_number,
         variant=variant,
         expected_condition=ProductCondition.NEW,
-        normalized_title=normalize_text(" ".join(part for part in (brand, product_name) if part)),
+        normalized_title=normalize_text(
+            " ".join(part for part in (manufacturer_value, brand, product_name) if part)
+        ),
+        allowed_brand_aliases=allowed_brand_aliases or ([brand] if brand else []),
+        allowed_manufacturer_aliases=allowed_manufacturer_aliases
+        or ([manufacturer_value] if manufacturer_value else []),
+        official_name_patterns=official_name_patterns
+        or ([official_product_line] if official_product_line else []),
+        target_is_official_product=(
+            target_is_official_product
+            if target_is_official_product is not None
+            else bool(brand and normalize_text(brand) in _tokens_for_test(product_name))
+        ),
         aliases=[product_name],
         excluded_terms=[],
         source_evidence=evidence,
@@ -185,6 +283,7 @@ def _listing(
         title=title,
         normalized_title=normalize_text(title),
         brand=brand,
+        provider_brand=brand,
         model_number=model_number,
         variant=variant,
         condition=condition,
@@ -198,3 +297,7 @@ def _listing(
         raw_rank_signals=[RankSignal(name="position", value=1.0, source="test")],
         observed_at=datetime.now(UTC),
     )
+
+
+def _tokens_for_test(value: str) -> set[str]:
+    return set(normalize_text(value).split())

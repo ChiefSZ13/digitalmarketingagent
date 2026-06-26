@@ -259,6 +259,17 @@
         ],
         "title": "Body_create_perception_run_api_v1_perception_runs_post"
       },
+      "BrandRole": {
+        "type": "string",
+        "enum": [
+          "official_brand",
+          "manufacturer_brand",
+          "third_party_brand",
+          "compatibility_target",
+          "unknown"
+        ],
+        "title": "BrandRole"
+      },
       "ClaimFlag": {
         "properties": {
           "claim": {
@@ -487,6 +498,14 @@
             "title": "Field Name"
           },
           "observed_value": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
             "title": "Observed Value"
           },
           "observed_at": {
@@ -1280,6 +1299,36 @@
             "minimum": 0.0,
             "title": "Primary Eligible Count"
           },
+          "official_match_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Official Match Count",
+            "default": 0
+          },
+          "official_variant_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Official Variant Count",
+            "default": 0
+          },
+          "licensed_alternative_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Licensed Alternative Count",
+            "default": 0
+          },
+          "compatible_alternative_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Compatible Alternative Count",
+            "default": 0
+          },
+          "accessory_or_replacement_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Accessory Or Replacement Count",
+            "default": 0
+          },
           "alternate_variant_count": {
             "type": "integer",
             "minimum": 0.0,
@@ -1399,6 +1448,71 @@
               }
             ],
             "title": "Brand Score"
+          },
+          "brand_owner_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand Owner Score"
+          },
+          "manufacturer_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer Score"
+          },
+          "official_product_line_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Product Line Score"
+          },
+          "compatibility_only_penalty": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Compatibility Only Penalty"
+          },
+          "third_party_brand_penalty": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Third Party Brand Penalty"
           },
           "model_score": {
             "anyOf": [
@@ -1571,6 +1685,50 @@
               }
             ],
             "title": "Brand"
+          },
+          "provider_brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Brand"
+          },
+          "extracted_title_brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Extracted Title Brand"
+          },
+          "manufacturer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer"
+          },
+          "product_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Line"
           },
           "model_number": {
             "anyOf": [
@@ -1749,6 +1907,52 @@
               }
             ]
           },
+          "compatibility_targets": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Compatibility Targets"
+          },
+          "compatibility_phrases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Compatibility Phrases"
+          },
+          "claimed_official": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claimed Official"
+          },
+          "claimed_licensed": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Claimed Licensed"
+          },
+          "brand_role": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/BrandRole"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
           "item_price": {
             "anyOf": [
               {
@@ -1905,12 +2109,99 @@
         ],
         "title": "NormalizedMarketplaceListing"
       },
+      "OfficialNameVerification": {
+        "properties": {
+          "official_name_match": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Name Match"
+          },
+          "official_product_line_match": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Product Line Match"
+          },
+          "expected_brand_present_as_brand": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Expected Brand Present As Brand"
+          },
+          "expected_brand_present_only_as_compatibility_target": {
+            "type": "boolean",
+            "title": "Expected Brand Present Only As Compatibility Target",
+            "default": false
+          },
+          "detected_listing_brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detected Listing Brand"
+          },
+          "detected_manufacturer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Detected Manufacturer"
+          },
+          "relationship": {
+            "$ref": "#/components/schemas/ProductRelationship"
+          },
+          "reason_codes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Reason Codes"
+          },
+          "conflicts": {
+            "items": {
+              "$ref": "#/components/schemas/MatchConflict"
+            },
+            "type": "array",
+            "title": "Conflicts"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "relationship"
+        ],
+        "title": "OfficialNameVerification"
+      },
       "PerceptionRun": {
         "properties": {
           "schema_version": {
             "type": "string",
             "title": "Schema Version",
-            "default": "2026-06-25.marketplace_validation.v2"
+            "default": "2026-06-25.marketplace_validation.v3"
           },
           "run_id": {
             "type": "string",
@@ -2116,9 +2407,35 @@
             ],
             "title": "Manufacturer"
           },
+          "sub_brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Sub Brand"
+          },
           "product_name": {
             "type": "string",
             "title": "Product Name"
+          },
+          "normalized_product_name": {
+            "type": "string",
+            "title": "Normalized Product Name"
+          },
+          "official_product_line": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Official Product Line"
           },
           "product_type": {
             "anyOf": [
@@ -2312,6 +2629,32 @@
             "type": "string",
             "title": "Normalized Title"
           },
+          "allowed_brand_aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Allowed Brand Aliases"
+          },
+          "allowed_manufacturer_aliases": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Allowed Manufacturer Aliases"
+          },
+          "official_name_patterns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Official Name Patterns"
+          },
+          "target_is_official_product": {
+            "type": "boolean",
+            "title": "Target Is Official Product",
+            "default": false
+          },
           "aliases": {
             "items": {
               "type": "string"
@@ -2338,6 +2681,7 @@
         "type": "object",
         "required": [
           "product_name",
+          "normalized_product_name",
           "normalized_title"
         ],
         "title": "ProductIdentity"
@@ -2351,6 +2695,10 @@
           },
           "status": {
             "$ref": "#/components/schemas/ProductMatchStatus"
+          },
+          "relationship": {
+            "$ref": "#/components/schemas/ProductRelationship",
+            "default": "unknown"
           },
           "score": {
             "type": "number",
@@ -2381,6 +2729,16 @@
           },
           "feature_scores": {
             "$ref": "#/components/schemas/MatchFeatureScores"
+          },
+          "official_name_verification": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/OfficialNameVerification"
+              },
+              {
+                "type": "null"
+              }
+            ]
           },
           "reason_codes": {
             "items": {
@@ -2637,6 +2995,19 @@
           "overall_confidence"
         ],
         "title": "ProductProfile"
+      },
+      "ProductRelationship": {
+        "type": "string",
+        "enum": [
+          "official_exact_product",
+          "official_same_product_family",
+          "licensed_third_party_alternative",
+          "generic_compatible_alternative",
+          "accessory_or_replacement",
+          "unrelated",
+          "unknown"
+        ],
+        "title": "ProductRelationship"
       },
       "ProviderMetadata": {
         "properties": {

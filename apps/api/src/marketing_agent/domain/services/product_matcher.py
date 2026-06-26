@@ -14,6 +14,7 @@ from decimal import Decimal, InvalidOperation
 
 from marketing_agent.domain.models.evidence import EvidenceRecord, EvidenceSource
 from marketing_agent.domain.models.marketplace import (
+    BrandRole,
     MarketplaceListingValidation,
     MarketplacePlatformEstimate,
     MarketplacePriceEstimate,
@@ -23,17 +24,19 @@ from marketing_agent.domain.models.marketplace import (
     MatchConflictSeverity,
     MatchFeatureScores,
     NormalizedMarketplaceListing,
+    OfficialNameVerification,
     ProductCondition,
     ProductIdentity,
     ProductMatchResult,
     ProductMatchStatus,
+    ProductRelationship,
 )
 from marketing_agent.domain.models.product import ProductProfile
 from marketing_agent.domain.models.run import ProductAnalysisRequest
 
-NORMALIZATION_VERSION = "marketplace-normalization-v1"
-SCORING_POLICY_VERSION = "product-match-scoring-v1"
-DEFAULT_MATCHER_VERSION = "product-matcher-v1"
+NORMALIZATION_VERSION = "marketplace-normalization-v2"
+SCORING_POLICY_VERSION = "official-brand-role-scoring-v2"
+DEFAULT_MATCHER_VERSION = "product-matcher-v2"
 
 BRAND_ALIASES: dict[str, str] = {
     "hewlett packard": "hp",
@@ -144,6 +147,80 @@ UNIT_PATTERN = re.compile(
     r"\b(?P<quantity>\d+(?:\.\d+)?)\s*(?P<unit>ml|l|oz|gb|tb)\b",
     flags=re.IGNORECASE,
 )
+COMPATIBILITY_PHRASE_TEMPLATES = (
+    "for",
+    "compatible with",
+    "works with",
+    "designed for",
+    "fits",
+    "replacement for",
+    "supports",
+)
+TITLE_BRAND_SKIP_TERMS = {
+    "brand",
+    "new",
+    "official",
+    "officially",
+    "licensed",
+    "genuine",
+    "original",
+}
+RETAILER_OR_SELLER_NAMES = {
+    "amazon",
+    "best buy",
+    "costco",
+    "dell",
+    "ebay",
+    "newegg",
+    "target",
+    "walmart",
+    "walmart marketplace",
+}
+
+
+@dataclass(frozen=True)
+class SubBrandRegistryEntry:
+    name: str
+    aliases: tuple[str, ...]
+    official_product_lines: tuple[str, ...]
+    known_licensed_third_party_brands: tuple[str, ...] = ()
+
+
+@dataclass(frozen=True)
+class BrandRegistryEntry:
+    manufacturer: str
+    manufacturer_aliases: tuple[str, ...]
+    sub_brands: tuple[SubBrandRegistryEntry, ...] = ()
+
+
+@dataclass(frozen=True)
+class RegistryMatch:
+    manufacturer: str
+    manufacturer_aliases: tuple[str, ...]
+    sub_brand: str
+    sub_brand_aliases: tuple[str, ...]
+    official_product_line: str | None
+    official_product_lines: tuple[str, ...]
+    known_licensed_third_party_brands: tuple[str, ...]
+
+
+BRAND_REGISTRY: tuple[BrandRegistryEntry, ...] = (
+    BrandRegistryEntry(
+        manufacturer="Microsoft",
+        manufacturer_aliases=("Microsoft", "Microsoft Corporation"),
+        sub_brands=(
+            SubBrandRegistryEntry(
+                name="Xbox",
+                aliases=("Xbox", "Microsoft Xbox"),
+                official_product_lines=(
+                    "Xbox Wireless Controller",
+                    "Xbox Elite Wireless Controller Series 2",
+                ),
+                known_licensed_third_party_brands=("PowerA", "PDP", "Razer"),
+            ),
+        ),
+    ),
+)
 
 
 @dataclass(frozen=True)
@@ -167,6 +244,18 @@ class ProductMatcherConfig:
             "variant": 0.04,
             "package": 0.02,
             "condition": 0.02,
+        }
+    )
+    official_weights: dict[str, float] = field(
+        default_factory=lambda: {
+            "identifier": 0.30,
+            "manufacturer": 0.18,
+            "brand_owner": 0.16,
+            "official_product_line": 0.16,
+            "model": 0.12,
+            "title": 0.04,
+            "product_type": 0.02,
+            "variant": 0.02,
         }
     )
 
@@ -335,11 +424,43 @@ def build_product_identity(
     brand = _linked_value(profile.brand) or request.brand
     category = _linked_value(profile.category) or request.category_hint
     product_type = _linked_value(profile.subcategory) or category
-    normalized_title = normalize_text(" ".join(part for part in (brand, product_name) if part))
+    registry_match = _registry_match_for_identity(
+        explicit_brand=brand,
+        identity_text_values=identity_text_values,
+    )
+    manufacturer = brand
+    sub_brand: str | None = None
+    official_product_line: str | None = None
+    allowed_brand_aliases = [brand] if brand else []
+    allowed_manufacturer_aliases = [brand] if brand else []
+    official_name_patterns: list[str] = []
+    target_is_official_product = _target_looks_like_official_product(
+        brand=brand,
+        product_name=product_name,
+        marketplace_query=_linked_value(profile.marketplace_search_query),
+        registry_match=registry_match,
+    )
+    if registry_match:
+        manufacturer = registry_match.manufacturer
+        brand = registry_match.sub_brand
+        sub_brand = registry_match.sub_brand
+        official_product_line = registry_match.official_product_line
+        allowed_brand_aliases = list(registry_match.sub_brand_aliases)
+        allowed_manufacturer_aliases = list(registry_match.manufacturer_aliases)
+        official_name_patterns = list(registry_match.official_product_lines)
+        target_is_official_product = True
+
+    normalized_product_name = normalize_text(product_name)
+    normalized_title = normalize_text(
+        " ".join(part for part in (manufacturer, brand, product_name) if part)
+    )
     return ProductIdentity(
         brand=brand,
-        manufacturer=brand,
+        manufacturer=manufacturer,
+        sub_brand=sub_brand,
         product_name=product_name,
+        normalized_product_name=normalized_product_name,
+        official_product_line=official_product_line,
         product_type=product_type,
         category=category,
         model_number=model_number,
@@ -351,9 +472,200 @@ def build_product_identity(
         unit_type=unit_type,
         expected_condition=expected_condition,
         normalized_title=normalized_title or normalize_text(product_name),
+        allowed_brand_aliases=_dedupe_preserve_order(allowed_brand_aliases),
+        allowed_manufacturer_aliases=_dedupe_preserve_order(allowed_manufacturer_aliases),
+        official_name_patterns=_dedupe_preserve_order(official_name_patterns),
+        target_is_official_product=target_is_official_product,
         aliases=aliases,
         excluded_terms=list(ACCESSORY_INDICATORS),
         source_evidence=profile.evidence,
+    )
+
+
+def derive_listing_brand_roles(
+    product: ProductIdentity,
+    listing: NormalizedMarketplaceListing,
+) -> NormalizedMarketplaceListing:
+    compatibility_targets, compatibility_phrases = _detect_compatibility_targets(
+        product,
+        listing,
+    )
+    provider_brand = listing.provider_brand or listing.brand
+    extracted_title_brand = listing.extracted_title_brand or _extract_title_brand(
+        product,
+        listing,
+    )
+    detected_brand = provider_brand or extracted_title_brand
+    detected_manufacturer = listing.manufacturer
+    if detected_brand and _is_manufacturer_alias(product, detected_brand):
+        detected_manufacturer = detected_manufacturer or detected_brand
+    claimed_licensed = listing.claimed_licensed
+    if claimed_licensed is None:
+        claimed_licensed = _claims_licensed(listing)
+    claimed_official = listing.claimed_official
+    if claimed_official is None:
+        claimed_official = _claims_official(listing)
+    brand_role = listing.brand_role or _brand_role(
+        product=product,
+        detected_brand=detected_brand,
+        compatibility_targets=compatibility_targets,
+    )
+    product_line = listing.product_line or _matched_official_line(product, listing)[0]
+    return listing.model_copy(
+        update={
+            "brand": listing.brand or provider_brand,
+            "provider_brand": provider_brand,
+            "extracted_title_brand": extracted_title_brand,
+            "manufacturer": detected_manufacturer,
+            "product_line": product_line,
+            "compatibility_targets": _dedupe_preserve_order(
+                [*listing.compatibility_targets, *compatibility_targets]
+            ),
+            "compatibility_phrases": _dedupe_preserve_order(
+                [*listing.compatibility_phrases, *compatibility_phrases]
+            ),
+            "claimed_official": claimed_official,
+            "claimed_licensed": claimed_licensed,
+            "brand_role": brand_role,
+        }
+    )
+
+
+def verify_official_name(
+    product: ProductIdentity,
+    listing: NormalizedMarketplaceListing,
+) -> OfficialNameVerification:
+    detected_brand = listing.provider_brand or listing.brand or listing.extracted_title_brand
+    detected_manufacturer = listing.manufacturer
+    if detected_brand and _is_manufacturer_alias(product, detected_brand):
+        detected_manufacturer = detected_manufacturer or detected_brand
+
+    brand_as_brand = (
+        listing.brand_role in {BrandRole.OFFICIAL_BRAND, BrandRole.MANUFACTURER_BRAND}
+        if listing.brand_role
+        else None
+    )
+    brand_only_compatibility = _expected_brand_only_as_compatibility_target(product, listing)
+    matched_line, matched_exact_product_line = _matched_official_line(product, listing)
+    official_product_line_match = matched_line is not None
+    known_licensed_brand = _is_known_licensed_brand(product, detected_brand)
+    third_party_brand = (
+        product.target_is_official_product
+        and detected_brand is not None
+        and not _is_expected_brand_or_manufacturer(product, detected_brand)
+        and not _is_retailer_or_seller_name(detected_brand)
+    )
+    reason_codes: list[str] = []
+    conflicts: list[MatchConflict] = []
+
+    if listing.brand_role == BrandRole.OFFICIAL_BRAND:
+        reason_codes.append("OFFICIAL_BRAND_CONFIRMED")
+    if listing.brand_role == BrandRole.MANUFACTURER_BRAND:
+        reason_codes.append("OFFICIAL_MANUFACTURER_CONFIRMED")
+    if official_product_line_match:
+        reason_codes.append("OFFICIAL_PRODUCT_LINE_CONFIRMED")
+    if brand_only_compatibility:
+        reason_codes.append("EXPECTED_BRAND_ONLY_IN_COMPATIBILITY_PHRASE")
+        conflicts.append(
+            _conflict(
+                code="EXPECTED_BRAND_ONLY_IN_COMPATIBILITY_PHRASE",
+                field="brand",
+                expected=_display_brand(product),
+                observed=", ".join(listing.compatibility_phrases) or listing.title,
+                severity=MatchConflictSeverity.HIGH,
+                explanation=(
+                    "The expected brand appears only as a compatibility target, not as the "
+                    "listing brand."
+                ),
+            )
+        )
+    if third_party_brand:
+        reason_codes.append("THIRD_PARTY_BRAND_DETECTED")
+        conflicts.append(
+            _conflict(
+                code="THIRD_PARTY_BRAND_DETECTED",
+                field="brand",
+                expected=_display_brand(product),
+                observed=detected_brand,
+                severity=MatchConflictSeverity.HIGH,
+                explanation=(
+                    "The listing exposes a different product brand from the requested official "
+                    "product."
+                ),
+            )
+        )
+    if detected_brand is None:
+        reason_codes.append("UNKNOWN_LISTING_BRAND")
+    if product.target_is_official_product and product.official_product_line and not matched_line:
+        reason_codes.append("OFFICIAL_NAME_INCOMPLETE")
+    if listing.claimed_licensed:
+        reason_codes.append("LICENSED_THIRD_PARTY_PRODUCT")
+    if known_licensed_brand:
+        reason_codes.append("LICENSED_THIRD_PARTY_PRODUCT")
+
+    if listing.claimed_licensed and third_party_brand:
+        conflicts.append(
+            _conflict(
+                code="LICENSED_THIRD_PARTY_PRODUCT",
+                field="brand",
+                expected="manufactured by official brand owner",
+                observed=f"{detected_brand} licensed for {_display_brand(product)}",
+                severity=MatchConflictSeverity.HIGH,
+                explanation=(
+                    "Officially licensed means compatible or authorized, not manufactured by "
+                    "the official brand owner."
+                ),
+            )
+        )
+
+    if third_party_brand and listing.compatibility_targets:
+        relationship = (
+            ProductRelationship.LICENSED_THIRD_PARTY_ALTERNATIVE
+            if known_licensed_brand or listing.claimed_licensed
+            else ProductRelationship.GENERIC_COMPATIBLE_ALTERNATIVE
+        )
+        reason_codes.append(
+            "LICENSED_THIRD_PARTY_PRODUCT"
+            if relationship == ProductRelationship.LICENSED_THIRD_PARTY_ALTERNATIVE
+            else "GENERIC_THIRD_PARTY_PRODUCT"
+        )
+    elif brand_only_compatibility:
+        relationship = ProductRelationship.GENERIC_COMPATIBLE_ALTERNATIVE
+        reason_codes.append("COMPATIBLE_PRODUCT_NOT_OFFICIAL")
+    elif official_product_line_match and brand_as_brand:
+        relationship = (
+            ProductRelationship.OFFICIAL_EXACT_PRODUCT
+            if matched_exact_product_line and not _has_unrequested_variant(product, listing)
+            else ProductRelationship.OFFICIAL_SAME_PRODUCT_FAMILY
+        )
+    elif product.target_is_official_product and brand_as_brand:
+        relationship = ProductRelationship.OFFICIAL_EXACT_PRODUCT
+    elif third_party_brand:
+        relationship = ProductRelationship.UNRELATED
+    else:
+        relationship = ProductRelationship.UNKNOWN
+
+    return OfficialNameVerification(
+        official_name_match=(
+            True
+            if relationship == ProductRelationship.OFFICIAL_EXACT_PRODUCT
+            else False
+            if relationship
+            in {
+                ProductRelationship.LICENSED_THIRD_PARTY_ALTERNATIVE,
+                ProductRelationship.GENERIC_COMPATIBLE_ALTERNATIVE,
+                ProductRelationship.UNRELATED,
+            }
+            else None
+        ),
+        official_product_line_match=official_product_line_match,
+        expected_brand_present_as_brand=brand_as_brand,
+        expected_brand_present_only_as_compatibility_target=brand_only_compatibility,
+        detected_listing_brand=detected_brand,
+        detected_manufacturer=detected_manufacturer,
+        relationship=relationship,
+        reason_codes=_dedupe_preserve_order(reason_codes),
+        conflicts=conflicts,
     )
 
 
@@ -364,32 +676,67 @@ def match_listing(
     config: ProductMatcherConfig | None = None,
 ) -> ProductMatchResult:
     matcher_config = config or ProductMatcherConfig()
-    conflicts = _detect_conflicts(product, listing, matcher_config)
-    feature_scores = _score_features(product, listing, matcher_config)
-    score = _weighted_score(feature_scores, matcher_config)
+    listing = derive_listing_brand_roles(product, listing)
+    official_verification = verify_official_name(product, listing)
+    conflicts = _detect_conflicts(product, listing, matcher_config, official_verification)
+    feature_scores = _score_features(product, listing, matcher_config, official_verification)
+    score = _weighted_score(
+        feature_scores,
+        matcher_config,
+        official_target=product.target_is_official_product,
+    )
     score = _apply_strong_identity_boost(score, feature_scores)
+    score = _apply_brand_role_penalties(score, feature_scores)
     score = _apply_conflict_penalties(score, conflicts)
-    status = _classify_match(score, conflicts, feature_scores, matcher_config)
-    group = _aggregation_group(status, conflicts)
+    relationship = _final_relationship(
+        product=product,
+        listing=listing,
+        official_verification=official_verification,
+        conflicts=conflicts,
+        score=score,
+    )
+    score = _relationship_confidence(score, relationship)
+    status = _classify_match(
+        score,
+        conflicts,
+        feature_scores,
+        matcher_config,
+        relationship=relationship,
+        target_is_official_product=product.target_is_official_product,
+    )
+    group = _aggregation_group(status, conflicts, relationship)
     eligible = (
         status in {ProductMatchStatus.EXACT_MATCH, ProductMatchStatus.PROBABLE_MATCH}
         and group == "primary"
+        and (
+            not product.target_is_official_product
+            or relationship == ProductRelationship.OFFICIAL_EXACT_PRODUCT
+        )
         and listing.landed_price is not None
         and listing.currency is not None
     )
     matched_fields = _matched_fields(feature_scores)
     unknown_fields = _unknown_fields(product, listing, feature_scores)
-    reason_codes = _reason_codes(status, conflicts, matched_fields, eligible)
+    reason_codes = _reason_codes(
+        status,
+        relationship,
+        official_verification,
+        conflicts,
+        matched_fields,
+        eligible,
+    )
     return ProductMatchResult(
         listing_id=listing.listing_id,
         status=status,
+        relationship=relationship,
         score=round(score, 3),
         matched_fields=matched_fields,
         unknown_fields=unknown_fields,
         conflicts=conflicts,
         feature_scores=feature_scores,
+        official_name_verification=official_verification,
         reason_codes=reason_codes,
-        human_summary=_human_summary(status, score, conflicts, group),
+        human_summary=_human_summary(status, relationship, score, conflicts, group),
         eligible_for_price_aggregation=eligible,
         aggregation_group=group,
         requires_human_review=status == ProductMatchStatus.UNCERTAIN,
@@ -415,13 +762,15 @@ def build_validated_marketplace_snapshot(
 ) -> tuple[MarketplaceSnapshot, list[EvidenceRecord]]:
     config = matcher_config or ProductMatcherConfig()
     identity = build_product_identity(profile, request=request)
-    validations = [
-        MarketplaceListingValidation(
-            listing=listing,
-            match_result=match_listing(identity, listing, config=config),
+    validations: list[MarketplaceListingValidation] = []
+    for listing in listings:
+        enriched_listing = derive_listing_brand_roles(identity, listing)
+        validations.append(
+            MarketplaceListingValidation(
+                listing=enriched_listing,
+                match_result=match_listing(identity, enriched_listing, config=config),
+            )
         )
-        for listing in listings
-    ]
     aggregation_evidence, rankings, prices = _aggregate_primary_offers(
         validations=validations,
         source_provider=source_provider,
@@ -470,8 +819,9 @@ def _detect_conflicts(
     product: ProductIdentity,
     listing: NormalizedMarketplaceListing,
     config: ProductMatcherConfig,
+    official_verification: OfficialNameVerification,
 ) -> list[MatchConflict]:
-    conflicts: list[MatchConflict] = []
+    conflicts: list[MatchConflict] = [*official_verification.conflicts]
     for field_name in IDENTIFIER_FIELDS:
         expected = normalize_identifier(getattr(product, field_name), field_name)
         observed = normalize_identifier(getattr(listing, field_name), field_name)
@@ -505,7 +855,12 @@ def _detect_conflicts(
 
     expected_brand = normalize_brand(product.brand)
     observed_brand = normalize_brand(listing.brand)
-    if expected_brand and observed_brand and expected_brand != observed_brand:
+    if (
+        expected_brand
+        and observed_brand
+        and expected_brand != observed_brand
+        and not any(conflict.code == "THIRD_PARTY_BRAND_DETECTED" for conflict in conflicts)
+    ):
         conflicts.append(
             _conflict(
                 code="BRAND_MISMATCH",
@@ -582,9 +937,28 @@ def _score_features(
     product: ProductIdentity,
     listing: NormalizedMarketplaceListing,
     config: ProductMatcherConfig,
+    official_verification: OfficialNameVerification,
 ) -> MatchFeatureScores:
     identifier_score = _identifier_score(product, listing)
-    brand_score = _brand_score(product, listing, config)
+    brand_score = _brand_score(product, listing, config, official_verification)
+    brand_owner_score = _brand_owner_score(product, listing, official_verification)
+    manufacturer_score = _manufacturer_score(product, listing, official_verification)
+    official_product_line_score = _official_product_line_score(official_verification)
+    compatibility_only_penalty = (
+        1.0
+        if product.target_is_official_product
+        and official_verification.expected_brand_present_only_as_compatibility_target
+        else 0.0
+    )
+    third_party_brand_penalty = (
+        1.0
+        if product.target_is_official_product
+        and (
+            listing.brand_role == BrandRole.THIRD_PARTY_BRAND
+            or "THIRD_PARTY_BRAND_DETECTED" in official_verification.reason_codes
+        )
+        else 0.0
+    )
     model_score = _model_score(product, listing)
     title_score = _dice_score(_tokens(product.normalized_title), _tokens(listing.normalized_title))
     important_token_score = _important_token_score(product, listing)
@@ -596,6 +970,11 @@ def _score_features(
     return MatchFeatureScores(
         identifier_score=identifier_score,
         brand_score=brand_score,
+        brand_owner_score=brand_owner_score,
+        manufacturer_score=manufacturer_score,
+        official_product_line_score=official_product_line_score,
+        compatibility_only_penalty=compatibility_only_penalty,
+        third_party_brand_penalty=third_party_brand_penalty,
         model_score=model_score,
         title_score=title_score,
         important_token_score=important_token_score,
@@ -608,22 +987,41 @@ def _score_features(
     )
 
 
-def _weighted_score(scores: MatchFeatureScores, config: ProductMatcherConfig) -> float:
-    values = {
-        "identifier": scores.identifier_score,
-        "model": scores.model_score,
-        "brand": scores.brand_score,
-        "product_type": scores.product_type_score,
-        "title": scores.title_score,
-        "important_tokens": scores.important_token_score,
-        "variant": scores.variant_score,
-        "package": scores.package_score,
-        "condition": scores.condition_score,
-    }
+def _weighted_score(
+    scores: MatchFeatureScores,
+    config: ProductMatcherConfig,
+    *,
+    official_target: bool,
+) -> float:
+    if official_target:
+        values = {
+            "identifier": scores.identifier_score,
+            "manufacturer": scores.manufacturer_score,
+            "brand_owner": scores.brand_owner_score,
+            "official_product_line": scores.official_product_line_score,
+            "model": scores.model_score,
+            "title": scores.title_score,
+            "product_type": scores.product_type_score,
+            "variant": scores.variant_score,
+        }
+        weights = config.official_weights
+    else:
+        values = {
+            "identifier": scores.identifier_score,
+            "model": scores.model_score,
+            "brand": scores.brand_score,
+            "product_type": scores.product_type_score,
+            "title": scores.title_score,
+            "important_tokens": scores.important_token_score,
+            "variant": scores.variant_score,
+            "package": scores.package_score,
+            "condition": scores.condition_score,
+        }
+        weights = config.weights
     available = [
-        (config.weights[name], value)
+        (weights[name], value)
         for name, value in values.items()
-        if value is not None and config.weights.get(name, 0.0) > 0
+        if value is not None and weights.get(name, 0.0) > 0
     ]
     if not available:
         return 0.0
@@ -641,6 +1039,15 @@ def _apply_conflict_penalties(score: float, conflicts: list[MatchConflict]) -> f
     return max(0.0, min(1.0, score - penalty))
 
 
+def _apply_brand_role_penalties(score: float, scores: MatchFeatureScores) -> float:
+    penalty = 0.0
+    if scores.compatibility_only_penalty:
+        penalty += 0.35 * scores.compatibility_only_penalty
+    if scores.third_party_brand_penalty:
+        penalty += 0.45 * scores.third_party_brand_penalty
+    return max(0.0, min(1.0, score - penalty))
+
+
 def _apply_strong_identity_boost(score: float, scores: MatchFeatureScores) -> float:
     if scores.identifier_score == 1.0:
         return max(score, 0.97)
@@ -654,12 +1061,40 @@ def _classify_match(
     conflicts: list[MatchConflict],
     scores: MatchFeatureScores,
     config: ProductMatcherConfig,
+    *,
+    relationship: ProductRelationship,
+    target_is_official_product: bool,
 ) -> ProductMatchStatus:
+    if relationship in {
+        ProductRelationship.LICENSED_THIRD_PARTY_ALTERNATIVE,
+        ProductRelationship.GENERIC_COMPATIBLE_ALTERNATIVE,
+        ProductRelationship.ACCESSORY_OR_REPLACEMENT,
+        ProductRelationship.UNRELATED,
+    }:
+        return ProductMatchStatus.REJECTED
     if any(conflict.severity == MatchConflictSeverity.HIGH for conflict in conflicts):
         return ProductMatchStatus.REJECTED
     if conflicts:
         return ProductMatchStatus.UNCERTAIN
     strong_identity = scores.identifier_score == 1.0 or scores.model_score == 1.0
+    if target_is_official_product:
+        if relationship == ProductRelationship.OFFICIAL_EXACT_PRODUCT:
+            if strong_identity and score >= config.exact_threshold:
+                return ProductMatchStatus.EXACT_MATCH
+            if score >= config.probable_threshold and _has_sufficient_evidence(scores, config):
+                return ProductMatchStatus.PROBABLE_MATCH
+            if score >= config.uncertain_threshold:
+                return ProductMatchStatus.UNCERTAIN
+            return ProductMatchStatus.REJECTED
+        if relationship == ProductRelationship.OFFICIAL_SAME_PRODUCT_FAMILY:
+            return (
+                ProductMatchStatus.PROBABLE_MATCH
+                if score >= config.uncertain_threshold
+                else ProductMatchStatus.UNCERTAIN
+            )
+        if score >= config.uncertain_threshold:
+            return ProductMatchStatus.UNCERTAIN
+        return ProductMatchStatus.REJECTED
     if strong_identity and score >= config.exact_threshold:
         return ProductMatchStatus.EXACT_MATCH
     if score >= config.probable_threshold and _has_sufficient_evidence(scores, config):
@@ -750,8 +1185,8 @@ def _aggregate_primary_offers(
                 observed_sales_signal=sales_signal,
                 sales_rank_basis=(
                     "Ranked from validated primary listings only; rejected, uncertain, "
-                    "alternate-package, alternate-variant, and alternate-condition listings "
-                    "are excluded."
+                    "official-variant, third-party alternative, alternate-package, "
+                    "alternate-condition, and rejected listings are excluded."
                 ),
                 listing_search_phrase=source_query,
                 source_url=best_listing.source_url,
@@ -782,7 +1217,7 @@ def _aggregate_primary_offers(
                 source_url=best_listing.source_url,
                 evidence_ids=[evidence_id],
                 confidence=_group_confidence(group),
-                risk_flags=["excludes_rejected_uncertain_and_alternate_offers"],
+                risk_flags=["excludes_rejected_uncertain_alternative_and_alternate_offers"],
             )
         )
     return evidence, rankings, prices
@@ -794,6 +1229,7 @@ def _validation_summary(
 ) -> MarketplaceValidationSummary:
     statuses = Counter(validation.match_result.status for validation in validations)
     groups = Counter(validation.match_result.aggregation_group for validation in validations)
+    relationships = Counter(validation.match_result.relationship for validation in validations)
     return MarketplaceValidationSummary(
         total_candidates=len(validations),
         exact_match_count=statuses[ProductMatchStatus.EXACT_MATCH],
@@ -805,7 +1241,16 @@ def _validation_summary(
             for validation in validations
             if validation.match_result.eligible_for_price_aggregation
         ),
-        alternate_variant_count=groups["alternate_variant"],
+        official_match_count=relationships[ProductRelationship.OFFICIAL_EXACT_PRODUCT],
+        official_variant_count=relationships[ProductRelationship.OFFICIAL_SAME_PRODUCT_FAMILY],
+        licensed_alternative_count=relationships[
+            ProductRelationship.LICENSED_THIRD_PARTY_ALTERNATIVE
+        ],
+        compatible_alternative_count=relationships[
+            ProductRelationship.GENERIC_COMPATIBLE_ALTERNATIVE
+        ],
+        accessory_or_replacement_count=relationships[ProductRelationship.ACCESSORY_OR_REPLACEMENT],
+        alternate_variant_count=groups["alternate_variant"] + groups["official_variant"],
         alternate_package_count=groups["alternate_package"],
         alternate_condition_count=groups["alternate_condition"],
         matcher_version=config.matcher_version,
@@ -853,16 +1298,62 @@ def _brand_score(
     product: ProductIdentity,
     listing: NormalizedMarketplaceListing,
     config: ProductMatcherConfig,
+    official_verification: OfficialNameVerification,
 ) -> float | None:
     expected = normalize_brand(product.brand)
     if not expected:
         return None
-    observed = normalize_brand(listing.brand)
+    if official_verification.expected_brand_present_only_as_compatibility_target:
+        return 0.0
+    observed = normalize_brand(official_verification.detected_listing_brand or listing.brand)
     if observed:
-        return 1.0 if expected == observed else 0.0
-    if expected in _tokens(listing.normalized_title):
+        return 1.0 if _is_expected_brand_or_manufacturer(product, observed) else 0.0
+    if expected in _tokens(_title_without_compatibility_phrases(listing)):
         return 0.85
     return 0.0 if config.require_brand else None
+
+
+def _brand_owner_score(
+    product: ProductIdentity,
+    listing: NormalizedMarketplaceListing,
+    official_verification: OfficialNameVerification,
+) -> float | None:
+    if not product.target_is_official_product:
+        return None
+    if listing.brand_role == BrandRole.OFFICIAL_BRAND:
+        return 1.0
+    if listing.brand_role == BrandRole.MANUFACTURER_BRAND:
+        return 0.85
+    if official_verification.expected_brand_present_only_as_compatibility_target:
+        return 0.0
+    if listing.brand_role == BrandRole.THIRD_PARTY_BRAND:
+        return 0.0
+    return None
+
+
+def _manufacturer_score(
+    product: ProductIdentity,
+    listing: NormalizedMarketplaceListing,
+    official_verification: OfficialNameVerification,
+) -> float | None:
+    if not product.target_is_official_product:
+        return None
+    manufacturer = official_verification.detected_manufacturer or listing.manufacturer
+    if manufacturer:
+        return 1.0 if _is_manufacturer_alias(product, manufacturer) else 0.0
+    if listing.brand_role == BrandRole.MANUFACTURER_BRAND:
+        return 1.0
+    return None
+
+
+def _official_product_line_score(
+    official_verification: OfficialNameVerification,
+) -> float | None:
+    if official_verification.official_product_line_match is True:
+        return 1.0
+    if official_verification.official_product_line_match is False:
+        return 0.0
+    return None
 
 
 def _model_score(product: ProductIdentity, listing: NormalizedMarketplaceListing) -> float | None:
@@ -952,6 +1443,346 @@ def _condition_score(
     return 1.0 if product.expected_condition == listing.condition else 0.0
 
 
+def _registry_match_for_identity(
+    *,
+    explicit_brand: str | None,
+    identity_text_values: Iterable[str | None],
+) -> RegistryMatch | None:
+    text = normalize_text(" ".join(value for value in identity_text_values if value))
+    explicit_brand_norm = normalize_brand(explicit_brand)
+    for entry in BRAND_REGISTRY:
+        manufacturer_aliases_norm = {
+            normalize_brand(alias) for alias in entry.manufacturer_aliases if normalize_brand(alias)
+        }
+        for sub_brand in entry.sub_brands:
+            sub_brand_aliases_norm = {
+                normalize_brand(alias) for alias in sub_brand.aliases if normalize_brand(alias)
+            }
+            allowed = manufacturer_aliases_norm.union(sub_brand_aliases_norm)
+            if explicit_brand_norm and explicit_brand_norm not in allowed:
+                continue
+            sub_brand_seen = any(_contains_phrase(text, alias) for alias in sub_brand.aliases)
+            line_match = _best_official_product_line(text, sub_brand.official_product_lines)
+            if not sub_brand_seen and not line_match:
+                continue
+            return RegistryMatch(
+                manufacturer=entry.manufacturer,
+                manufacturer_aliases=entry.manufacturer_aliases,
+                sub_brand=sub_brand.name,
+                sub_brand_aliases=sub_brand.aliases,
+                official_product_line=line_match,
+                official_product_lines=sub_brand.official_product_lines,
+                known_licensed_third_party_brands=sub_brand.known_licensed_third_party_brands,
+            )
+    return None
+
+
+def _target_looks_like_official_product(
+    *,
+    brand: str | None,
+    product_name: str,
+    marketplace_query: str | None,
+    registry_match: RegistryMatch | None,
+) -> bool:
+    if registry_match:
+        return True
+    if not brand:
+        return False
+    identity_text = normalize_text(
+        " ".join(part for part in (product_name, marketplace_query) if part)
+    )
+    return _contains_phrase(identity_text, brand)
+
+
+def _detect_compatibility_targets(
+    product: ProductIdentity,
+    listing: NormalizedMarketplaceListing,
+) -> tuple[list[str], list[str]]:
+    text = normalize_text(
+        " ".join(part for part in (listing.title, listing.description_excerpt) if part)
+    )
+    targets: list[str] = []
+    phrases: list[str] = []
+    for alias in sorted(_expected_brand_aliases(product), key=len, reverse=True):
+        alias_norm = normalize_text(alias)
+        if not alias_norm:
+            continue
+        alias_pattern = re.escape(alias_norm).replace(r"\ ", r"\s+")
+        for template in COMPATIBILITY_PHRASE_TEMPLATES:
+            template_pattern = re.escape(template).replace(r"\ ", r"\s+")
+            pattern = re.compile(rf"\b{template_pattern}\s+{alias_pattern}\b")
+            for match in pattern.finditer(text):
+                targets.append(alias)
+                phrases.append(match.group(0))
+        reverse_pattern = re.compile(rf"\b{alias_pattern}\s+compatible\b")
+        for match in reverse_pattern.finditer(text):
+            targets.append(alias)
+            phrases.append(match.group(0))
+    return _dedupe_preserve_order(targets), _dedupe_preserve_order(phrases)
+
+
+def _extract_title_brand(
+    product: ProductIdentity,
+    listing: NormalizedMarketplaceListing,
+) -> str | None:
+    title = listing.title.strip()
+    title_norm = normalize_text(title)
+    known_prefixes = [
+        *_expected_brand_aliases(product),
+        *_known_licensed_third_party_brands(product),
+    ]
+    for alias in sorted(_dedupe_preserve_order(known_prefixes), key=len, reverse=True):
+        if _starts_with_phrase(title_norm, alias):
+            return alias
+
+    product_terms = _product_noun_tokens(product).union(_tokens(product.normalized_product_name))
+    tokens = re.findall(r"[A-Za-z][A-Za-z0-9&.+-]*", title)
+    for token in tokens[:4]:
+        normalized = normalize_brand(token)
+        if not normalized:
+            continue
+        if normalized in TITLE_BRAND_SKIP_TERMS:
+            continue
+        if normalized in product_terms or normalized in COLOR_TERMS:
+            continue
+        if _is_retailer_or_seller_name(normalized):
+            continue
+        return token
+    return None
+
+
+def _brand_role(
+    *,
+    product: ProductIdentity,
+    detected_brand: str | None,
+    compatibility_targets: list[str],
+) -> BrandRole:
+    if detected_brand:
+        if _is_brand_alias(product, detected_brand):
+            return BrandRole.OFFICIAL_BRAND
+        if _is_manufacturer_alias(product, detected_brand):
+            return BrandRole.MANUFACTURER_BRAND
+        if not _is_retailer_or_seller_name(detected_brand):
+            return BrandRole.THIRD_PARTY_BRAND
+    if compatibility_targets:
+        return BrandRole.COMPATIBILITY_TARGET
+    return BrandRole.UNKNOWN
+
+
+def _expected_brand_only_as_compatibility_target(
+    product: ProductIdentity,
+    listing: NormalizedMarketplaceListing,
+) -> bool:
+    if not product.target_is_official_product:
+        return False
+    if not listing.compatibility_targets:
+        return False
+    if listing.brand_role in {BrandRole.OFFICIAL_BRAND, BrandRole.MANUFACTURER_BRAND}:
+        return False
+    remaining = _title_without_compatibility_phrases(listing)
+    return not any(_contains_phrase(remaining, alias) for alias in _expected_brand_aliases(product))
+
+
+def _matched_official_line(
+    product: ProductIdentity,
+    listing: NormalizedMarketplaceListing,
+) -> tuple[str | None, bool]:
+    if listing.product_line:
+        exact = normalize_text(listing.product_line) == normalize_text(
+            product.official_product_line
+        )
+        return listing.product_line, exact
+    text = _title_without_compatibility_phrases(listing)
+    for line in product.official_name_patterns:
+        line_norm = normalize_text(line)
+        if _contains_phrase(text, line):
+            return line, line_norm == normalize_text(product.official_product_line)
+    for line in product.official_name_patterns:
+        line_tokens = _tokens(line)
+        if line_tokens and line_tokens.issubset(_tokens(text)):
+            return line, normalize_text(line) == normalize_text(product.official_product_line)
+    return None, False
+
+
+def _best_official_product_line(text: str, lines: Iterable[str]) -> str | None:
+    text_tokens = _tokens(text)
+    for line in lines:
+        if _contains_phrase(text, line):
+            return line
+    for line in lines:
+        line_tokens = _tokens(line)
+        if line_tokens and line_tokens.issubset(text_tokens):
+            return line
+    return None
+
+
+def _final_relationship(
+    *,
+    product: ProductIdentity,
+    listing: NormalizedMarketplaceListing,
+    official_verification: OfficialNameVerification,
+    conflicts: list[MatchConflict],
+    score: float,
+) -> ProductRelationship:
+    codes = {conflict.code for conflict in conflicts}
+    if "ACCESSORY_MISMATCH" in codes:
+        return ProductRelationship.ACCESSORY_OR_REPLACEMENT
+    if official_verification.relationship != ProductRelationship.UNKNOWN:
+        return official_verification.relationship
+    if "BUNDLE_MISMATCH" in codes:
+        return ProductRelationship.UNRELATED
+    if not product.target_is_official_product:
+        return ProductRelationship.UNKNOWN
+    if product.target_is_official_product and score >= 0.45:
+        return ProductRelationship.UNKNOWN
+    if score < 0.35:
+        return ProductRelationship.UNRELATED
+    return ProductRelationship.UNKNOWN
+
+
+def _relationship_confidence(score: float, relationship: ProductRelationship) -> float:
+    floors = {
+        ProductRelationship.LICENSED_THIRD_PARTY_ALTERNATIVE: 0.96,
+        ProductRelationship.GENERIC_COMPATIBLE_ALTERNATIVE: 0.94,
+        ProductRelationship.ACCESSORY_OR_REPLACEMENT: 0.96,
+        ProductRelationship.UNRELATED: 0.9,
+        ProductRelationship.OFFICIAL_EXACT_PRODUCT: 0.82,
+        ProductRelationship.OFFICIAL_SAME_PRODUCT_FAMILY: 0.88,
+    }
+    return max(score, floors.get(relationship, score))
+
+
+def _claims_licensed(listing: NormalizedMarketplaceListing) -> bool:
+    text = normalize_text(
+        " ".join(part for part in (listing.title, listing.description_excerpt) if part)
+    )
+    return "officially licensed" in text or "licensed for" in text
+
+
+def _claims_official(listing: NormalizedMarketplaceListing) -> bool:
+    text = normalize_text(
+        " ".join(part for part in (listing.title, listing.description_excerpt) if part)
+    )
+    return "official" in text and "officially licensed" not in text
+
+
+def _has_unrequested_variant(
+    product: ProductIdentity,
+    listing: NormalizedMarketplaceListing,
+) -> bool:
+    if product.color:
+        return False
+    listing_color = normalize_text(listing.color) or _first_color_token(listing.title)
+    return bool(listing_color)
+
+
+def _expected_brand_aliases(product: ProductIdentity) -> list[str]:
+    return _dedupe_preserve_order(
+        [
+            *(product.allowed_brand_aliases or []),
+            *(product.allowed_manufacturer_aliases or []),
+            product.brand,
+            product.manufacturer,
+            product.sub_brand,
+        ]
+    )
+
+
+def _known_licensed_third_party_brands(product: ProductIdentity) -> list[str]:
+    expected_aliases = {normalize_brand(alias) for alias in _expected_brand_aliases(product)}
+    licensed: list[str] = []
+    for entry in BRAND_REGISTRY:
+        manufacturer_aliases = {
+            normalize_brand(alias) for alias in entry.manufacturer_aliases if normalize_brand(alias)
+        }
+        for sub_brand in entry.sub_brands:
+            sub_aliases = {
+                normalize_brand(alias) for alias in sub_brand.aliases if normalize_brand(alias)
+            }
+            if expected_aliases.intersection(manufacturer_aliases.union(sub_aliases)):
+                licensed.extend(sub_brand.known_licensed_third_party_brands)
+    return _dedupe_preserve_order(licensed)
+
+
+def _is_known_licensed_brand(product: ProductIdentity, value: str | None) -> bool:
+    observed = normalize_brand(value)
+    if not observed:
+        return False
+    return observed in {
+        normalize_brand(alias)
+        for alias in _known_licensed_third_party_brands(product)
+        if normalize_brand(alias)
+    }
+
+
+def _is_expected_brand_or_manufacturer(product: ProductIdentity, value: str | None) -> bool:
+    return _is_brand_alias(product, value) or _is_manufacturer_alias(product, value)
+
+
+def _is_brand_alias(product: ProductIdentity, value: str | None) -> bool:
+    observed = normalize_brand(value)
+    if not observed:
+        return False
+    aliases = [*(product.allowed_brand_aliases or []), product.brand, product.sub_brand]
+    return observed in {normalize_brand(alias) for alias in aliases if normalize_brand(alias)}
+
+
+def _is_manufacturer_alias(product: ProductIdentity, value: str | None) -> bool:
+    observed = normalize_brand(value)
+    if not observed:
+        return False
+    aliases = [*(product.allowed_manufacturer_aliases or []), product.manufacturer]
+    return observed in {normalize_brand(alias) for alias in aliases if normalize_brand(alias)}
+
+
+def _is_retailer_or_seller_name(value: str | None) -> bool:
+    normalized = normalize_brand(value)
+    return bool(normalized and normalized in RETAILER_OR_SELLER_NAMES)
+
+
+def _title_without_compatibility_phrases(listing: NormalizedMarketplaceListing) -> str:
+    text = normalize_text(
+        " ".join(part for part in (listing.title, listing.description_excerpt) if part)
+    )
+    for phrase in listing.compatibility_phrases:
+        text = re.sub(rf"\b{re.escape(normalize_text(phrase))}\b", " ", text)
+    return normalize_text(text)
+
+
+def _contains_phrase(text: str, phrase: str | None) -> bool:
+    phrase_norm = normalize_text(phrase)
+    text_norm = normalize_text(text)
+    if not phrase_norm or not text_norm:
+        return False
+    return re.search(rf"(?<!\w){re.escape(phrase_norm)}(?!\w)", text_norm) is not None
+
+
+def _starts_with_phrase(text: str, phrase: str | None) -> bool:
+    phrase_norm = normalize_text(phrase)
+    text_norm = normalize_text(text)
+    if not phrase_norm or not text_norm:
+        return False
+    return re.match(rf"^{re.escape(phrase_norm)}(?:\b|\s)", text_norm) is not None
+
+
+def _display_brand(product: ProductIdentity) -> str:
+    return product.brand or product.manufacturer or product.product_name
+
+
+def _dedupe_preserve_order(values: Iterable[str | None]) -> list[str]:
+    seen: set[str] = set()
+    deduped: list[str] = []
+    for value in values:
+        if not value:
+            continue
+        normalized = normalize_text(value)
+        if not normalized or normalized in seen:
+            continue
+        deduped.append(value)
+        seen.add(normalized)
+    return deduped
+
+
 def _variant_conflict(
     product: ProductIdentity,
     listing: NormalizedMarketplaceListing,
@@ -1031,7 +1862,19 @@ def _condition_conflict(
     )
 
 
-def _aggregation_group(status: ProductMatchStatus, conflicts: list[MatchConflict]) -> str | None:
+def _aggregation_group(
+    status: ProductMatchStatus,
+    conflicts: list[MatchConflict],
+    relationship: ProductRelationship,
+) -> str | None:
+    if relationship == ProductRelationship.LICENSED_THIRD_PARTY_ALTERNATIVE:
+        return "licensed_alternative"
+    if relationship == ProductRelationship.GENERIC_COMPATIBLE_ALTERNATIVE:
+        return "compatible_alternative"
+    if relationship == ProductRelationship.ACCESSORY_OR_REPLACEMENT:
+        return "accessory_or_replacement"
+    if relationship == ProductRelationship.OFFICIAL_SAME_PRODUCT_FAMILY:
+        return "official_variant"
     codes = {conflict.code for conflict in conflicts}
     if "PACKAGE_QUANTITY_MISMATCH" in codes:
         return "alternate_package"
@@ -1050,6 +1893,9 @@ def _matched_fields(scores: MatchFeatureScores) -> list[str]:
     fields = {
         "identifier": scores.identifier_score,
         "brand": scores.brand_score,
+        "brand_owner": scores.brand_owner_score,
+        "manufacturer": scores.manufacturer_score,
+        "official_product_line": scores.official_product_line_score,
         "model_number": scores.model_score,
         "title": scores.title_score,
         "important_tokens": scores.important_token_score,
@@ -1088,12 +1934,15 @@ def _unknown_fields(
 
 def _reason_codes(
     status: ProductMatchStatus,
+    relationship: ProductRelationship,
+    official_verification: OfficialNameVerification,
     conflicts: list[MatchConflict],
     matched_fields: list[str],
     eligible: bool,
 ) -> list[str]:
-    codes = [conflict.code for conflict in conflicts]
+    codes = [*official_verification.reason_codes, *[conflict.code for conflict in conflicts]]
     codes.append(status.upper())
+    codes.append(relationship.upper())
     if matched_fields:
         codes.append("MATCHED_" + "_".join(field.upper() for field in matched_fields[:3]))
     if eligible:
@@ -1103,10 +1952,31 @@ def _reason_codes(
 
 def _human_summary(
     status: ProductMatchStatus,
+    relationship: ProductRelationship,
     score: float,
     conflicts: list[MatchConflict],
     group: str | None,
 ) -> str:
+    if relationship == ProductRelationship.LICENSED_THIRD_PARTY_ALTERNATIVE:
+        return (
+            "Licensed third-party compatible alternative; excluded from official product price "
+            f"aggregation. Confidence {score:.2f}."
+        )
+    if relationship == ProductRelationship.GENERIC_COMPATIBLE_ALTERNATIVE:
+        return (
+            "Compatible third-party alternative; excluded from official product price "
+            f"aggregation. Confidence {score:.2f}."
+        )
+    if relationship == ProductRelationship.OFFICIAL_SAME_PRODUCT_FAMILY:
+        return (
+            "Official product-family variant; separated from exact official price aggregation. "
+            f"Confidence {score:.2f}; aggregation group {group or 'none'}."
+        )
+    if relationship == ProductRelationship.ACCESSORY_OR_REPLACEMENT:
+        return (
+            "Accessory or replacement part; excluded from product price aggregation. "
+            f"Confidence {score:.2f}."
+        )
     if conflicts:
         main = conflicts[0]
         return (
@@ -1257,6 +2127,8 @@ def _important_tokens(product: ProductIdentity) -> set[str]:
     tokens: set[str] = set()
     if product.brand:
         tokens.update(_tokens(product.brand))
+    if product.manufacturer:
+        tokens.update(_tokens(product.manufacturer))
     if product.model_number:
         normalized_model = normalize_model_number(product.model_number)
         if normalized_model:
@@ -1270,8 +2142,8 @@ def _product_noun_tokens(product: ProductIdentity) -> set[str]:
     candidates = _tokens(
         " ".join(part for part in (product.product_name, product.product_type) if part)
     )
-    if product.brand:
-        candidates.difference_update(_tokens(product.brand))
+    for alias in _expected_brand_aliases(product):
+        candidates.difference_update(_tokens(alias))
     if product.model_number:
         normalized_model = normalize_model_number(product.model_number)
         if normalized_model:

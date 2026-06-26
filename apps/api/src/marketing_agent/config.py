@@ -35,7 +35,7 @@ class Settings(BaseSettings):
     serpapi_api_key: str | None = None
     serpapi_location: str | None = "United States"
     marketplace_timeout_seconds: float = 20.0
-    product_matcher_version: str = "product-matcher-v1"
+    product_matcher_version: str = "product-matcher-v2"
     product_match_exact_threshold: float = Field(default=0.93, ge=0.0, le=1.0)
     product_match_probable_threshold: float = Field(default=0.84, ge=0.0, le=1.0)
     product_match_uncertain_threshold: float = Field(default=0.65, ge=0.0, le=1.0)

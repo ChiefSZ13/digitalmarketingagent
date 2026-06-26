@@ -48,7 +48,7 @@ OPENAI_MODEL=gpt-4.1-mini
 MARKETPLACE_DATA_PROVIDER=mock
 SERPAPI_API_KEY=
 SERPAPI_LOCATION=United States
-PRODUCT_MATCHER_VERSION=product-matcher-v1
+PRODUCT_MATCHER_VERSION=product-matcher-v2
 PRODUCT_MATCH_EXACT_THRESHOLD=0.93
 PRODUCT_MATCH_PROBABLE_THRESHOLD=0.84
 PRODUCT_MATCH_UNCERTAIN_THRESHOLD=0.65
@@ -98,8 +98,13 @@ passes through deterministic product validation. The matcher builds a canonical
 product identity, normalizes each provider listing, applies hard conflict rules
 for identifiers, model numbers, brands, accessories, conditions, variants,
 bundles, and package quantities, then scores explainable similarity features.
-Rejected, uncertain, alternate-package, alternate-variant, and
-alternate-condition listings are excluded from the primary price range.
+It also verifies brand role and product relationship for official products:
+provider brand/manufacturer, detected title brand, compatibility targets, and
+official product-line evidence are kept separate. A phrase such as
+`for Xbox` or `compatible with Microsoft Xbox` is treated as compatibility
+evidence, not as proof that the listing is an official Microsoft/Xbox product.
+Licensed and generic third-party compatible alternatives are excluded from the
+official product price range.
 
 Match statuses:
 
@@ -111,10 +116,16 @@ Match statuses:
   require review; excluded from primary aggregation.
 - `rejected`: hard conflict or low deterministic similarity.
 
-The frontend shows validated matches, needs-review listings, rejected listings,
-alternate variants, alternate package quantities, and alternate conditions.
-Needs-review rows have local-only review actions for this milestone. These
-overrides do not mutate raw provider observations or stored artifacts.
+Each listing also exposes a `relationship`, such as
+`official_exact_product`, `official_same_product_family`,
+`licensed_third_party_alternative`, `generic_compatible_alternative`,
+`accessory_or_replacement`, `unrelated`, or `unknown`.
+
+The frontend groups listings as official matches, official alternate variants,
+licensed third-party alternatives, other compatible alternatives, needs review,
+and rejected. Needs-review rows have local-only review actions for this
+milestone. These overrides do not mutate raw provider observations or stored
+artifacts.
 
 An optional ambiguity reviewer is configured but disabled by default:
 `AMBIGUOUS_MATCH_REVIEWER_ENABLED=false`. The deterministic matcher works

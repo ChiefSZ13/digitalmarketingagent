@@ -13,6 +13,7 @@ from marketing_agent.domain.models.marketplace import (
     ProductCondition,
     ProductIdentity,
     ProductMatchStatus,
+    ProductRelationship,
     RankSignal,
 )
 from marketing_agent.domain.services.product_matcher import (
@@ -41,11 +42,14 @@ def main() -> None:
         latencies_ms.append((time.perf_counter() - started) * 1000)
         conflicts = [conflict.code for conflict in result.conflicts]
         expected_conflicts = case["expected_conflicts"]
+        expected_relationship = case.get("expected_relationship")
         results.append(
             {
                 "name": case["name"],
                 "expected_status": case["expected_status"],
                 "actual_status": result.status.value,
+                "expected_relationship": expected_relationship,
+                "actual_relationship": result.relationship.value,
                 "expected_conflicts": expected_conflicts,
                 "actual_conflicts": conflicts,
                 "expected_eligible": case["eligible_for_price_aggregation"],
@@ -54,6 +58,10 @@ def main() -> None:
                 "actual_group": result.aggregation_group,
                 "passed": (
                     result.status.value == case["expected_status"]
+                    and (
+                        expected_relationship is None
+                        or result.relationship.value == expected_relationship
+                    )
                     and set(expected_conflicts).issubset(conflicts)
                     and result.eligible_for_price_aggregation
                     == case["eligible_for_price_aggregation"]
@@ -77,6 +85,47 @@ def main() -> None:
         if item["expected_status"] in {"exact_match", "probable_match"}
         and item["actual_status"] == "rejected"
     }
+    official_expected = {
+        item["name"]
+        for item in results
+        if item["expected_relationship"] == ProductRelationship.OFFICIAL_EXACT_PRODUCT.value
+    }
+    official_actual = {
+        item["name"]
+        for item in results
+        if item["actual_relationship"] == ProductRelationship.OFFICIAL_EXACT_PRODUCT.value
+    }
+    third_party_expected = {
+        item["name"]
+        for item in results
+        if item["expected_relationship"]
+        in {
+            ProductRelationship.LICENSED_THIRD_PARTY_ALTERNATIVE.value,
+            ProductRelationship.GENERIC_COMPATIBLE_ALTERNATIVE.value,
+        }
+    }
+    third_party_excluded = {
+        item["name"]
+        for item in results
+        if item["name"] in third_party_expected and not item["actual_eligible"]
+    }
+    licensed_expected = {
+        item["name"]
+        for item in results
+        if item["expected_relationship"]
+        == ProductRelationship.LICENSED_THIRD_PARTY_ALTERNATIVE.value
+    }
+    generic_expected = {
+        item["name"]
+        for item in results
+        if item["expected_relationship"]
+        == ProductRelationship.GENERIC_COMPATIBLE_ALTERNATIVE.value
+    }
+    compatibility_expected = {
+        item["name"]
+        for item in results
+        if "EXPECTED_BRAND_ONLY_IN_COMPATIBILITY_PHRASE" in item["expected_conflicts"]
+    }
     accepted_precision = (
         len(accepted_actual.intersection(accepted_expected)) / len(accepted_actual)
         if accepted_actual
@@ -93,6 +142,26 @@ def main() -> None:
         "passed_count": sum(1 for item in results if item["passed"]),
         "accepted_match_precision": round(accepted_precision, 3),
         "accepted_match_recall": round(recall, 3),
+        "official_product_precision": _set_precision(official_actual, official_expected),
+        "third_party_exclusion_accuracy": _set_recall(
+            third_party_excluded,
+            third_party_expected,
+        ),
+        "compatibility_brand_detection_accuracy": _conflict_accuracy(
+            results,
+            "EXPECTED_BRAND_ONLY_IN_COMPATIBILITY_PHRASE",
+        )
+        if compatibility_expected
+        else 0.0,
+        "licensed_alternative_classification_accuracy": _relationship_accuracy(
+            results,
+            ProductRelationship.LICENSED_THIRD_PARTY_ALTERNATIVE.value,
+        ),
+        "generic_alternative_classification_accuracy": _relationship_accuracy(
+            results,
+            ProductRelationship.GENERIC_COMPATIBLE_ALTERNATIVE.value,
+        ),
+        "brand_role_false_positive_rate": _brand_role_false_positive_rate(results),
         "false_match_rate": round(len(false_confident) / total, 3),
         "false_confident_match_rate": round(len(false_confident) / max(len(accepted_actual), 1), 3),
         "false_rejection_rate": round(len(false_rejections) / total, 3),
@@ -116,10 +185,10 @@ def main() -> None:
     }
     report = {"metrics": metrics, "failures": [item for item in results if not item["passed"]]}
     print(json.dumps(report, indent=2))
-    if metrics["accepted_match_precision"] < 0.9:
-        raise SystemExit("Accepted-match precision is below 90%.")
-    if metrics["false_confident_match_rate"] > 0.05:
-        raise SystemExit("False confident-match rate is above 5%.")
+    if metrics["official_product_precision"] < 0.95:
+        raise SystemExit("Official-product precision is below 95%.")
+    if metrics["brand_role_false_positive_rate"] > 0.02:
+        raise SystemExit("Brand-role false-positive rate is above 2%.")
     if report["failures"]:
         raise SystemExit("Product matcher evaluation failed.")
 
@@ -135,12 +204,23 @@ def _identity(payload: dict[str, Any]) -> ProductIdentity:
         )
     ]
     normalized_title = normalize_text(
-        " ".join(part for part in (payload.get("brand"), payload["product_name"]) if part)
+        " ".join(
+            part
+            for part in (
+                payload.get("manufacturer"),
+                payload.get("brand"),
+                payload["product_name"],
+            )
+            if part
+        )
     )
     return ProductIdentity(
         brand=payload.get("brand"),
-        manufacturer=payload.get("brand"),
+        manufacturer=payload.get("manufacturer") or payload.get("brand"),
+        sub_brand=payload.get("sub_brand"),
         product_name=payload["product_name"],
+        normalized_product_name=normalize_text(payload["product_name"]),
+        official_product_line=payload.get("official_product_line"),
         product_type=payload.get("product_type"),
         category=payload.get("product_type"),
         model_number=payload.get("model_number"),
@@ -148,6 +228,10 @@ def _identity(payload: dict[str, Any]) -> ProductIdentity:
         variant=payload.get("variant"),
         expected_condition=ProductCondition.NEW,
         normalized_title=normalized_title,
+        allowed_brand_aliases=payload.get("allowed_brand_aliases", []),
+        allowed_manufacturer_aliases=payload.get("allowed_manufacturer_aliases", []),
+        official_name_patterns=payload.get("official_name_patterns", []),
+        target_is_official_product=payload.get("target_is_official_product", False),
         aliases=[payload["product_name"]],
         excluded_terms=[],
         source_evidence=evidence,
@@ -169,6 +253,8 @@ def _listing(payload: dict[str, Any]) -> NormalizedMarketplaceListing:
         title=title,
         normalized_title=normalize_text(title),
         brand=payload.get("brand"),
+        provider_brand=payload.get("provider_brand") or payload.get("brand"),
+        manufacturer=payload.get("manufacturer"),
         model_number=payload.get("model_number") or extract_model_number(title),
         manufacturer_part_number=payload.get("manufacturer_part_number"),
         variant=payload.get("variant"),
@@ -179,6 +265,8 @@ def _listing(payload: dict[str, Any]) -> NormalizedMarketplaceListing:
         item_price=decimal_or_none(payload.get("item_price", 100)),
         landed_price=decimal_or_none(payload.get("item_price", 100)),
         currency="USD",
+        claimed_licensed=payload.get("claimed_licensed"),
+        claimed_official=payload.get("claimed_official"),
         raw_rank_signals=[RankSignal(name="position", value=1.0, source="fixture")],
         observed_at=datetime.now(UTC),
     )
@@ -190,6 +278,43 @@ def _conflict_accuracy(results: list[dict[str, Any]], code: str) -> float:
         return 0.0
     matched = sum(1 for item in relevant if code in item["actual_conflicts"])
     return round(matched / len(relevant), 3)
+
+
+def _relationship_accuracy(results: list[dict[str, Any]], relationship: str) -> float:
+    relevant = [item for item in results if item["expected_relationship"] == relationship]
+    if not relevant:
+        return 0.0
+    matched = sum(1 for item in relevant if item["actual_relationship"] == relationship)
+    return round(matched / len(relevant), 3)
+
+
+def _brand_role_false_positive_rate(results: list[dict[str, Any]]) -> float:
+    third_party = {
+        ProductRelationship.LICENSED_THIRD_PARTY_ALTERNATIVE.value,
+        ProductRelationship.GENERIC_COMPATIBLE_ALTERNATIVE.value,
+    }
+    relevant = [item for item in results if item["expected_relationship"] in third_party]
+    if not relevant:
+        return 0.0
+    false_positive_count = sum(
+        1
+        for item in relevant
+        if item["actual_relationship"] == ProductRelationship.OFFICIAL_EXACT_PRODUCT.value
+        or item["actual_eligible"]
+    )
+    return round(false_positive_count / len(relevant), 3)
+
+
+def _set_precision(actual: set[str], expected: set[str]) -> float:
+    if not actual:
+        return 0.0 if expected else 1.0
+    return round(len(actual.intersection(expected)) / len(actual), 3)
+
+
+def _set_recall(actual: set[str], expected: set[str]) -> float:
+    if not expected:
+        return 1.0
+    return round(len(actual.intersection(expected)) / len(expected), 3)
 
 
 def _p95(values: list[float]) -> float:

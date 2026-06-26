@@ -185,6 +185,8 @@ def _extract_listings(payload: Any, *, observed_at: datetime) -> list[Normalized
                 title=title,
                 normalized_title=normalize_text(title),
                 description_excerpt=_clean_text(raw.get("snippet")),
+                provider_brand=_clean_text(raw.get("brand")),
+                manufacturer=_clean_text(raw.get("manufacturer")),
                 model_number=extract_model_number(title, _clean_text(raw.get("snippet"))),
                 pack_quantity=pack_quantity,
                 unit_quantity=unit_quantity,

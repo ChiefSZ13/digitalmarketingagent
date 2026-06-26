@@ -23,17 +23,19 @@ import {
 } from "@/lib/formatters";
 
 type ReviewOverride =
-  | "accepted"
+  | "official_match"
+  | "official_variant"
+  | "licensed_alternative"
+  | "compatible_alternative"
   | "rejected"
-  | "alternate_variant"
   | "alternate_package";
 type GroupKey =
-  | "validated"
+  | "official"
+  | "official_variant"
+  | "licensed"
+  | "compatible"
   | "review"
-  | "rejected"
-  | "alternate_variant"
-  | "alternate_package"
-  | "alternate_condition";
+  | "rejected";
 
 const GROUPS: Array<{
   key: GroupKey;
@@ -41,9 +43,24 @@ const GROUPS: Array<{
   empty: string;
 }> = [
   {
-    key: "validated",
-    title: "Validated matches",
-    empty: "No validated primary matches.",
+    key: "official",
+    title: "Official matches",
+    empty: "No official primary matches.",
+  },
+  {
+    key: "official_variant",
+    title: "Official alternate variants",
+    empty: "No official alternate variants.",
+  },
+  {
+    key: "licensed",
+    title: "Licensed third-party alternatives",
+    empty: "No licensed third-party alternatives.",
+  },
+  {
+    key: "compatible",
+    title: "Other compatible alternatives",
+    empty: "No compatible alternatives.",
   },
   {
     key: "review",
@@ -52,23 +69,8 @@ const GROUPS: Array<{
   },
   {
     key: "rejected",
-    title: "Rejected listings",
+    title: "Rejected",
     empty: "No rejected listings.",
-  },
-  {
-    key: "alternate_variant",
-    title: "Alternate variants",
-    empty: "No alternate variants.",
-  },
-  {
-    key: "alternate_package",
-    title: "Alternate package quantities",
-    empty: "No alternate package quantities.",
-  },
-  {
-    key: "alternate_condition",
-    title: "Alternate conditions",
-    empty: "No alternate conditions.",
   },
 ];
 
@@ -338,6 +340,25 @@ function ListingRow({
 }) {
   const { listing, match_result: match } = validation;
   const imageUrl = listing.image_urls[0];
+  const verification = match.official_name_verification;
+  const detectedBrand =
+    verification?.detected_listing_brand ??
+    listing.provider_brand ??
+    listing.brand ??
+    listing.extracted_title_brand;
+  const detectedManufacturer =
+    verification?.detected_manufacturer ?? listing.manufacturer;
+  const compatibilityTarget =
+    listing.compatibility_targets.length > 0
+      ? listing.compatibility_targets.join(", ")
+      : "None";
+  const officialProduct =
+    match.relationship === "official_exact_product" ||
+    match.relationship === "official_same_product_family"
+      ? "Yes"
+      : match.relationship === "unknown"
+        ? "Needs review"
+        : "No";
   return (
     <article className="min-w-0 p-3">
       <div className="flex min-w-0 gap-3">
@@ -366,10 +387,29 @@ function ListingRow({
                 {listing.seller_name ? ` · ${listing.seller_name}` : ""}
               </p>
             </div>
-            <StatusBadge status={match.status} score={match.score} />
+            <StatusBadge
+              relationship={match.relationship}
+              score={match.score}
+              status={match.status}
+            />
           </div>
 
           <dl className="mt-3 grid min-w-0 gap-2 text-xs text-gray-600 sm:grid-cols-2">
+            <Fact label="Detected brand" value={detectedBrand ?? "Unknown"} />
+            <Fact
+              label="Detected manufacturer"
+              value={detectedManufacturer ?? "Unknown"}
+            />
+            <Fact
+              label="Relationship"
+              value={relationshipLabel(match.relationship)}
+            />
+            <Fact label="Compatibility target" value={compatibilityTarget} />
+            <Fact label="Official product" value={officialProduct} />
+            <Fact
+              label="Included in official price range"
+              value={match.eligible_for_price_aggregation ? "Yes" : "No"}
+            />
             <Fact
               label="Item"
               value={money(listing.item_price, listing.currency)}
@@ -398,6 +438,14 @@ function ListingRow({
                   : "None"
               }
             />
+            <Fact
+              label="Brand evidence"
+              value={
+                verification?.reason_codes.length
+                  ? verification.reason_codes.map(titleize).join(", ")
+                  : "No brand-role evidence"
+              }
+            />
           </dl>
 
           {override ? (
@@ -412,20 +460,38 @@ function ListingRow({
                 icon={
                   <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5" />
                 }
-                label="Accept as match"
-                onClick={() => onOverride(listing.listing_id, "accepted")}
+                label="Accept as official match"
+                onClick={() => onOverride(listing.listing_id, "official_match")}
+              />
+              <ReviewButton
+                icon={<RotateCcw aria-hidden="true" className="h-3.5 w-3.5" />}
+                label="Mark as official variant"
+                onClick={() =>
+                  onOverride(listing.listing_id, "official_variant")
+                }
+              />
+              <ReviewButton
+                icon={
+                  <CheckCircle2 aria-hidden="true" className="h-3.5 w-3.5" />
+                }
+                label="Mark as licensed alternative"
+                onClick={() =>
+                  onOverride(listing.listing_id, "licensed_alternative")
+                }
+              />
+              <ReviewButton
+                icon={
+                  <PackageOpen aria-hidden="true" className="h-3.5 w-3.5" />
+                }
+                label="Mark as compatible alternative"
+                onClick={() =>
+                  onOverride(listing.listing_id, "compatible_alternative")
+                }
               />
               <ReviewButton
                 icon={<XCircle aria-hidden="true" className="h-3.5 w-3.5" />}
                 label="Reject"
                 onClick={() => onOverride(listing.listing_id, "rejected")}
-              />
-              <ReviewButton
-                icon={<RotateCcw aria-hidden="true" className="h-3.5 w-3.5" />}
-                label="Alternate variant"
-                onClick={() =>
-                  onOverride(listing.listing_id, "alternate_variant")
-                }
               />
               <ReviewButton
                 icon={
@@ -445,6 +511,9 @@ function ListingRow({
             </summary>
             <div className="mt-2 min-w-0 space-y-2 rounded border border-gray-200 bg-gray-50 p-3 text-xs text-gray-700">
               <p className="break-words">{match.human_summary}</p>
+              <p className="break-words">
+                Relationship: {relationshipLabel(match.relationship)}
+              </p>
               <p className="break-words">
                 Reason codes:{" "}
                 {match.reason_codes.length > 0
@@ -473,20 +542,37 @@ function ListingRow({
   );
 }
 
-function StatusBadge({ status, score }: { status: string; score: number }) {
-  const label = titleize(status);
+function StatusBadge({
+  relationship,
+  status,
+  score,
+}: {
+  relationship: string;
+  status: string;
+  score: number;
+}) {
+  const label = relationshipBadgeLabel(relationship, status);
   const tone =
-    status === "exact_match" || status === "probable_match"
+    relationship === "official_exact_product"
       ? "border-emerald-200 bg-emerald-50 text-emerald-800"
-      : status === "uncertain"
-        ? "border-amber-200 bg-amber-50 text-amber-800"
-        : "border-red-200 bg-red-50 text-red-800";
+      : relationship === "official_same_product_family"
+        ? "border-blue-200 bg-blue-50 text-blue-800"
+        : relationship === "licensed_third_party_alternative" ||
+            relationship === "generic_compatible_alternative"
+          ? "border-sky-200 bg-sky-50 text-sky-800"
+          : status === "uncertain" || relationship === "unknown"
+            ? "border-amber-200 bg-amber-50 text-amber-800"
+            : "border-red-200 bg-red-50 text-red-800";
   const Icon =
-    status === "exact_match" || status === "probable_match"
+    relationship === "official_exact_product"
       ? CheckCircle2
-      : status === "uncertain"
+      : status === "uncertain" || relationship === "unknown"
         ? HelpCircle
-        : XCircle;
+        : relationship === "official_same_product_family" ||
+            relationship === "licensed_third_party_alternative" ||
+            relationship === "generic_compatible_alternative"
+          ? RotateCcw
+          : XCircle;
   return (
     <span
       className={`inline-flex flex-none items-center gap-1 rounded border px-2 py-1 text-xs font-medium ${tone}`}
@@ -549,45 +635,63 @@ function groupListings(
   overrides: Record<string, ReviewOverride>,
 ): Record<GroupKey, MarketplaceListingValidation[]> {
   const grouped: Record<GroupKey, MarketplaceListingValidation[]> = {
-    validated: [],
+    official: [],
+    official_variant: [],
+    licensed: [],
+    compatible: [],
     review: [],
     rejected: [],
-    alternate_variant: [],
-    alternate_package: [],
-    alternate_condition: [],
   };
   for (const validation of listings) {
     const listingId = validation.listing.listing_id;
     const override = overrides[listingId];
-    if (override === "accepted") {
-      grouped.validated.push(validation);
+    if (override === "official_match") {
+      grouped.official.push(validation);
       continue;
     }
-    if (override === "rejected") {
+    if (override === "official_variant") {
+      grouped.official_variant.push(validation);
+      continue;
+    }
+    if (override === "licensed_alternative") {
+      grouped.licensed.push(validation);
+      continue;
+    }
+    if (override === "compatible_alternative") {
+      grouped.compatible.push(validation);
+      continue;
+    }
+    if (override === "rejected" || override === "alternate_package") {
       grouped.rejected.push(validation);
       continue;
     }
-    if (override === "alternate_variant") {
-      grouped.alternate_variant.push(validation);
+
+    const relationship = validation.match_result.relationship;
+    if (relationship === "official_exact_product") {
+      grouped.official.push(validation);
       continue;
     }
-    if (override === "alternate_package") {
-      grouped.alternate_package.push(validation);
+    if (relationship === "official_same_product_family") {
+      grouped.official_variant.push(validation);
+      continue;
+    }
+    if (relationship === "licensed_third_party_alternative") {
+      grouped.licensed.push(validation);
+      continue;
+    }
+    if (relationship === "generic_compatible_alternative") {
+      grouped.compatible.push(validation);
       continue;
     }
 
     const group = validation.match_result.aggregation_group;
-    if (group === "alternate_variant") {
-      grouped.alternate_variant.push(validation);
-    } else if (group === "alternate_package") {
-      grouped.alternate_package.push(validation);
-    } else if (group === "alternate_condition") {
-      grouped.alternate_condition.push(validation);
+    if (group === "official_variant" || group === "alternate_variant") {
+      grouped.official_variant.push(validation);
     } else if (
       validation.match_result.status === "exact_match" ||
       validation.match_result.status === "probable_match"
     ) {
-      grouped.validated.push(validation);
+      grouped.official.push(validation);
     } else if (validation.match_result.status === "uncertain") {
       grouped.review.push(validation);
     } else {
@@ -595,4 +699,29 @@ function groupListings(
     }
   }
   return grouped;
+}
+
+function relationshipLabel(relationship: string): string {
+  return relationship === "generic_compatible_alternative"
+    ? "Generic compatible alternative"
+    : titleize(relationship);
+}
+
+function relationshipBadgeLabel(relationship: string, status: string): string {
+  if (relationship === "licensed_third_party_alternative") {
+    return "Licensed alternative";
+  }
+  if (relationship === "generic_compatible_alternative") {
+    return "Compatible alternative";
+  }
+  if (relationship === "official_same_product_family") {
+    return "Official variant";
+  }
+  if (relationship === "official_exact_product") {
+    return "Official match";
+  }
+  if (relationship === "accessory_or_replacement") {
+    return "Accessory";
+  }
+  return titleize(status);
 }
