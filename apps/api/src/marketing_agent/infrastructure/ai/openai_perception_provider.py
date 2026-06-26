@@ -89,7 +89,8 @@ class OpenAIPerceptionProvider:
                     await asyncio.sleep(0.4)
                     continue
                 raise OpenAIProviderError(
-                    f"OpenAI provider returned status {exc.status_code}"
+                    f"OpenAI provider returned status {exc.status_code}: "
+                    f"{_status_error_detail(exc)}"
                 ) from exc
         raise OpenAIProviderError("OpenAI provider returned schema-invalid output") from last_error
 
@@ -140,6 +141,16 @@ def _to_openai_strict_json_schema(schema: dict[str, Any]) -> dict[str, Any]:
     strict_schema = cast(dict[str, object], dict(schema))
     _make_objects_strict(strict_schema)
     return cast(dict[str, Any], strict_schema)
+
+
+def _status_error_detail(exc: object) -> str:
+    response = getattr(exc, "response", None)
+    if response is None:
+        return "No response body was returned."
+    text = getattr(response, "text", "")
+    if not isinstance(text, str) or not text.strip():
+        return "No response body was returned."
+    return text.strip()[:1000]
 
 
 def _make_objects_strict(value: object) -> None:

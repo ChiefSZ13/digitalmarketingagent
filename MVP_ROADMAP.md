@@ -40,6 +40,14 @@ Progress:
 - Marketplace provider queries now prefer the model-generated `marketplace_search_query` field, which is intended to contain the normalized core product model instead of raw human descriptions or narrow variant descriptors.
 - Added marketplace evidence records so provider observations can be traced.
 - Added frontend rendering for platform rankings, observed offer/review signals, price ranges, methodology, limitations, and non-live data warnings.
+- Added a deterministic-first product-validation pipeline between marketplace provider results and aggregation.
+- Added canonical product identity, normalized marketplace listing, match conflict, feature-score, match-result, and validation-summary models.
+- Added hard validation rules for identifiers, model numbers, brands, accessories, bundles, package quantities, variants, and non-new conditions.
+- Primary marketplace rankings and price ranges now use only exact/probable primary matches; rejected, uncertain, alternate package, alternate variant, and alternate condition listings remain visible but excluded from primary aggregation.
+- Added official-product brand-role verification so compatibility language such as `for Xbox` is not treated as product-brand evidence.
+- Added product relationships for official exact products, official family variants, licensed third-party alternatives, generic compatible alternatives, accessories/replacements, unrelated listings, and unknown cases.
+- Added frontend product-validation groups for official matches, official alternate variants, licensed third-party alternatives, compatible alternatives, needs review, and rejected listings.
+- Added `make evaluate-product-matcher` with fixture coverage for exact, ambiguous, accessory, multipack, variant, condition, official Xbox, licensed third-party Xbox, generic compatible Xbox, and retailer/seller ambiguity cases.
 
 Current limitations:
 
@@ -47,6 +55,10 @@ Current limitations:
 - True `observed_units_sold` is only populated when a provider result explicitly exposes a sold/bought signal.
 - SerpAPI live-key validation should be run with a real key before relying on it in production.
 - Additional providers such as direct marketplace APIs, retailer feeds, Keepa, or eBay data can be added behind the same provider port later.
+- Manual listing review decisions are frontend-local for now and are not persisted as separate override records.
+- Product matching is deterministic and intentionally conservative; the evaluation dataset is a small smoke benchmark, not a statistically meaningful market-wide benchmark.
+- The brand/product-line registry is intentionally tiny and currently only seeds Microsoft/Xbox examples; unknown brands still use generic deterministic logic.
+- Optional LLM ambiguity review is configured but not implemented or enabled.
 
 ## MVP 1B — Keyword Intelligence — In Progress
 

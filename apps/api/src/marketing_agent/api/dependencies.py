@@ -10,6 +10,7 @@ from marketing_agent.config import Settings, get_settings
 from marketing_agent.domain.ports.artifact_repository import ArtifactRepository
 from marketing_agent.domain.ports.marketplace_data_provider import MarketplaceDataProvider
 from marketing_agent.domain.ports.perception_provider import PerceptionProvider
+from marketing_agent.domain.services.product_matcher import ProductMatcherConfig
 from marketing_agent.infrastructure.ai.mock_perception_provider import MockPerceptionProvider
 from marketing_agent.infrastructure.ai.openai_perception_provider import OpenAIPerceptionProvider
 from marketing_agent.infrastructure.marketplace.mock_marketplace_data_provider import (
@@ -50,6 +51,16 @@ def get_provider(settings: SettingsDep) -> PerceptionProvider:
 
 
 def get_marketplace_provider(settings: SettingsDep) -> MarketplaceDataProvider:
+    matcher_config = ProductMatcherConfig(
+        matcher_version=settings.product_matcher_version,
+        exact_threshold=settings.product_match_exact_threshold,
+        probable_threshold=settings.product_match_probable_threshold,
+        uncertain_threshold=settings.product_match_uncertain_threshold,
+        require_brand=settings.product_match_require_brand,
+        color_strict=settings.product_match_color_strict,
+        exclude_refurbished=settings.product_match_exclude_refurbished,
+        exclude_used=settings.product_match_exclude_used,
+    )
     if settings.marketplace_data_provider.lower() == "serpapi":
         if not settings.serpapi_api_key:
             raise RuntimeError("SERPAPI_API_KEY is required when MARKETPLACE_DATA_PROVIDER=serpapi")
@@ -57,8 +68,9 @@ def get_marketplace_provider(settings: SettingsDep) -> MarketplaceDataProvider:
             api_key=settings.serpapi_api_key,
             timeout_seconds=settings.marketplace_timeout_seconds,
             location=settings.serpapi_location,
+            matcher_config=matcher_config,
         )
-    return MockMarketplaceDataProvider()
+    return MockMarketplaceDataProvider(matcher_config=matcher_config)
 
 
 def get_pipeline(

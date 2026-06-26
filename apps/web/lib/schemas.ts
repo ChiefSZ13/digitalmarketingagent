@@ -23,6 +23,15 @@ export const evidenceRecordSchema = z.object({
   quote: z.string().nullable(),
   confidence: z.number(),
   created_at: z.string(),
+  provider: z.string().nullable().optional(),
+  platform: z.string().nullable().optional(),
+  listing_id: z.string().nullable().optional(),
+  field_name: z.string().nullable().optional(),
+  observed_value: z.unknown().nullable().optional(),
+  observed_at: z.string().nullable().optional(),
+  provider_run_id: z.string().nullable().optional(),
+  normalization_version: z.string().nullable().optional(),
+  matcher_version: z.string().nullable().optional(),
 });
 
 export const claimFlagSchema = z.object({
@@ -114,6 +123,9 @@ export const marketplacePlatformEstimateSchema = z.object({
   listing_search_phrase: z.string(),
   source_url: z.string().nullable(),
   evidence_ids: z.array(z.string()),
+  source_count: z.number(),
+  validated_listing_count: z.number(),
+  matcher_version: z.string().nullable(),
   confidence: z.number(),
   risk_flags: z.array(z.string()),
 });
@@ -122,15 +134,198 @@ export const marketplacePriceEstimateSchema = z.object({
   platform: z.string(),
   data_source: z.string(),
   price_low: z.number().nullable(),
+  price_median: z.number().nullable(),
   price_high: z.number().nullable(),
   currency: z.string(),
   observed_offer_count: z.number().nullable(),
+  source_count: z.number(),
+  observation_started_at: z.string().nullable(),
+  observation_ended_at: z.string().nullable(),
+  aggregation_group: z.string(),
+  matcher_version: z.string().nullable(),
   price_basis: z.string(),
   listing_search_phrase: z.string(),
   source_url: z.string().nullable(),
   evidence_ids: z.array(z.string()),
   confidence: z.number(),
   risk_flags: z.array(z.string()),
+});
+
+export const productIdentitySchema = z.object({
+  brand: z.string().nullable(),
+  manufacturer: z.string().nullable(),
+  sub_brand: z.string().nullable().optional().default(null),
+  product_name: z.string(),
+  normalized_product_name: z.string().optional().default(""),
+  official_product_line: z.string().nullable().optional().default(null),
+  product_type: z.string().nullable(),
+  category: z.string().nullable(),
+  model_number: z.string().nullable(),
+  manufacturer_part_number: z.string().nullable(),
+  gtin: z.string().nullable(),
+  upc: z.string().nullable(),
+  ean: z.string().nullable(),
+  isbn: z.string().nullable(),
+  asin: z.string().nullable(),
+  variant: z.string().nullable(),
+  color: z.string().nullable(),
+  size: z.string().nullable(),
+  material: z.string().nullable(),
+  pack_quantity: z.number().nullable(),
+  unit_quantity: z.number().nullable(),
+  unit_type: z.string().nullable(),
+  expected_condition: z.string().nullable(),
+  normalized_title: z.string(),
+  allowed_brand_aliases: z.array(z.string()).optional().default([]),
+  allowed_manufacturer_aliases: z.array(z.string()).optional().default([]),
+  official_name_patterns: z.array(z.string()).optional().default([]),
+  target_is_official_product: z.boolean().optional().default(false),
+  aliases: z.array(z.string()),
+  excluded_terms: z.array(z.string()),
+  source_evidence: z.array(evidenceRecordSchema),
+});
+
+export const normalizedMarketplaceListingSchema = z.object({
+  provider: z.string(),
+  platform: z.string(),
+  listing_id: z.string(),
+  source_url: z.string().nullable(),
+  title: z.string(),
+  normalized_title: z.string(),
+  description_excerpt: z.string().nullable(),
+  brand: z.string().nullable(),
+  provider_brand: z.string().nullable().optional().default(null),
+  extracted_title_brand: z.string().nullable().optional().default(null),
+  manufacturer: z.string().nullable().optional().default(null),
+  product_line: z.string().nullable().optional().default(null),
+  model_number: z.string().nullable(),
+  manufacturer_part_number: z.string().nullable(),
+  gtin: z.string().nullable(),
+  upc: z.string().nullable(),
+  ean: z.string().nullable(),
+  isbn: z.string().nullable(),
+  asin: z.string().nullable(),
+  product_type: z.string().nullable(),
+  category: z.string().nullable(),
+  variant: z.string().nullable(),
+  color: z.string().nullable(),
+  size: z.string().nullable(),
+  pack_quantity: z.number().nullable(),
+  unit_quantity: z.number().nullable(),
+  unit_type: z.string().nullable(),
+  condition: z.string().nullable(),
+  compatibility_targets: z.array(z.string()).optional().default([]),
+  compatibility_phrases: z.array(z.string()).optional().default([]),
+  claimed_official: z.boolean().nullable().optional().default(null),
+  claimed_licensed: z.boolean().nullable().optional().default(null),
+  brand_role: z.string().nullable().optional().default(null),
+  item_price: z.number().nullable(),
+  shipping_price: z.number().nullable(),
+  mandatory_fees: z.number().nullable(),
+  discount: z.number().nullable(),
+  landed_price: z.number().nullable(),
+  currency: z.string().nullable(),
+  image_urls: z.array(z.string()),
+  seller_name: z.string().nullable(),
+  stock_status: z.string().nullable(),
+  rating: z.number().nullable(),
+  review_count: z.number().nullable(),
+  raw_rank_signals: z.array(
+    z.object({
+      name: z.string(),
+      value: z.number(),
+      source: z.string().nullable(),
+    }),
+  ),
+  raw_provider_payload_reference: z.string().nullable(),
+  observed_at: z.string(),
+});
+
+export const matchConflictSchema = z.object({
+  code: z.string(),
+  field: z.string(),
+  expected: z.unknown().nullable(),
+  observed: z.unknown().nullable(),
+  severity: z.string(),
+  explanation: z.string(),
+});
+
+export const matchFeatureScoresSchema = z.object({
+  identifier_score: z.number().nullable(),
+  brand_score: z.number().nullable(),
+  brand_owner_score: z.number().nullable().optional().default(null),
+  manufacturer_score: z.number().nullable().optional().default(null),
+  official_product_line_score: z.number().nullable().optional().default(null),
+  compatibility_only_penalty: z.number().nullable().optional().default(null),
+  third_party_brand_penalty: z.number().nullable().optional().default(null),
+  model_score: z.number().nullable(),
+  title_score: z.number(),
+  important_token_score: z.number(),
+  product_type_score: z.number().nullable(),
+  category_score: z.number().nullable(),
+  variant_score: z.number().nullable(),
+  package_score: z.number().nullable(),
+  condition_score: z.number().nullable(),
+  image_score: z.number().nullable(),
+});
+
+export const officialNameVerificationSchema = z.object({
+  official_name_match: z.boolean().nullable(),
+  official_product_line_match: z.boolean().nullable(),
+  expected_brand_present_as_brand: z.boolean().nullable(),
+  expected_brand_present_only_as_compatibility_target: z.boolean(),
+  detected_listing_brand: z.string().nullable(),
+  detected_manufacturer: z.string().nullable(),
+  relationship: z.string(),
+  reason_codes: z.array(z.string()),
+  conflicts: z.array(matchConflictSchema),
+});
+
+export const productMatchResultSchema = z.object({
+  listing_id: z.string(),
+  status: z.string(),
+  relationship: z.string().optional().default("unknown"),
+  score: z.number(),
+  matched_fields: z.array(z.string()),
+  unknown_fields: z.array(z.string()),
+  conflicts: z.array(matchConflictSchema),
+  feature_scores: matchFeatureScoresSchema,
+  official_name_verification: officialNameVerificationSchema
+    .nullable()
+    .optional()
+    .default(null),
+  reason_codes: z.array(z.string()),
+  human_summary: z.string(),
+  eligible_for_price_aggregation: z.boolean(),
+  aggregation_group: z.string().nullable(),
+  requires_human_review: z.boolean(),
+  matcher_version: z.string(),
+  created_at: z.string(),
+});
+
+export const marketplaceListingValidationSchema = z.object({
+  listing: normalizedMarketplaceListingSchema,
+  match_result: productMatchResultSchema,
+});
+
+export const marketplaceValidationSummarySchema = z.object({
+  total_candidates: z.number(),
+  exact_match_count: z.number(),
+  probable_match_count: z.number(),
+  uncertain_count: z.number(),
+  rejected_count: z.number(),
+  primary_eligible_count: z.number(),
+  official_match_count: z.number().optional().default(0),
+  official_variant_count: z.number().optional().default(0),
+  licensed_alternative_count: z.number().optional().default(0),
+  compatible_alternative_count: z.number().optional().default(0),
+  accessory_or_replacement_count: z.number().optional().default(0),
+  alternate_variant_count: z.number(),
+  alternate_package_count: z.number(),
+  alternate_condition_count: z.number(),
+  matcher_version: z.string(),
+  scoring_policy_version: z.string(),
+  normalization_version: z.string(),
 });
 
 export const marketplaceSnapshotSchema = z.object({
@@ -142,6 +337,9 @@ export const marketplaceSnapshotSchema = z.object({
   is_live_data: z.boolean(),
   methodology: z.string(),
   limitations: z.array(z.string()),
+  product_identity: productIdentitySchema.nullable(),
+  validation_summary: marketplaceValidationSummarySchema.nullable(),
+  validated_listings: z.array(marketplaceListingValidationSchema),
   platform_rankings: z.array(marketplacePlatformEstimateSchema),
   price_estimates: z.array(marketplacePriceEstimateSchema),
   warnings: z.array(z.string()),
@@ -187,6 +385,9 @@ export type MarketplacePlatformEstimate = z.infer<
 >;
 export type MarketplacePriceEstimate = z.infer<
   typeof marketplacePriceEstimateSchema
+>;
+export type MarketplaceListingValidation = z.infer<
+  typeof marketplaceListingValidationSchema
 >;
 export type MarketplaceSnapshot = z.infer<typeof marketplaceSnapshotSchema>;
 export type PerceptionRun = z.infer<typeof perceptionRunSchema>;

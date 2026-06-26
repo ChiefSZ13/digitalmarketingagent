@@ -14,6 +14,8 @@ def test_cli_analyze_writes_output(tmp_path: Path, monkeypatch: pytest.MonkeyPat
     image_path.write_bytes(make_png_bytes())
     monkeypatch.setenv("ARTIFACT_DIR", str(tmp_path / "runs"))
     monkeypatch.setenv("PERCEPTION_PROVIDER", "mock")
+    monkeypatch.setenv("MARKETPLACE_DATA_PROVIDER", "mock")
+    monkeypatch.delenv("SERPAPI_API_KEY", raising=False)
     get_settings.cache_clear()
 
     result = CliRunner().invoke(
