@@ -67,17 +67,15 @@ test("fixture-backed analysis flow", async ({ page }) => {
     page.getByText(/Local review override: Official Match/i),
   ).toBeVisible();
   await page
-    .getByRole("combobox", { name: /^Category$/ })
-    .selectOption("negative");
+    .getByRole("combobox", { name: /^Query family$/ })
+    .selectOption("transactional");
+  await expect(page.getByRole("cell", { name: "buy desk lamp" })).toBeVisible();
+  await page
+    .getByRole("button", { name: /inspect/i })
+    .first()
+    .click();
   await expect(
-    page.getByRole("cell", { name: "cheap Portable Rechargeable Desk Lamp" }),
-  ).toBeVisible();
-  await page.getByRole("button", { name: /inspect/i }).click();
-  await expect(
-    page.getByText(
-      "Negative keyword candidate to avoid low-intent bargain traffic.",
-      { exact: true },
-    ),
+    page.getByText("Transactional search query.", { exact: true }),
   ).toBeVisible();
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: /download/i }).click();
