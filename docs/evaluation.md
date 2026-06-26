@@ -23,6 +23,18 @@ make test-evals
 
 The MVP runner verifies fixture coverage and records the metrics that future prompt/model changes must track: schema-valid response rate, attribute precision, unsupported-claim rate, evidence coverage, keyword relevance, duplicate rate, category accuracy, latency, and cost per run.
 
+Keyword-generation realism has a separate smoke runner:
+
+```bash
+make evaluate-keyword-generation
+```
+
+It verifies short human-style query generation for air conditioner, Xbox
+controller, coffee maker, and running shoes fixtures. It reports average and
+maximum query length, over-8/over-10-word rates, duplicate rate, expected-query
+recall, bad-query rejection rate, description-copy rejections, and query-family
+coverage.
+
 ## Product Matcher Evaluation
 
 Product-validation fixtures live in `tests/evals/product_matcher_cases.json`.

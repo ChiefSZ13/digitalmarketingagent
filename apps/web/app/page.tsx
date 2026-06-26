@@ -22,10 +22,11 @@ import type { AnalysisFormValues, PerceptionRun } from "@/lib/schemas";
 
 const INITIAL_FILTERS: KeywordFilterState = {
   text: "",
-  category: "all",
+  queryFamily: "all",
   intent: "all",
   minRelevance: 0,
-  minConfidence: 0,
+  minRealism: 0,
+  eligibility: "all",
   sort: "relevance",
 };
 
@@ -55,11 +56,13 @@ function ProductPerceptionPage() {
     },
   });
 
-  const categories = useMemo(
+  const queryFamilies = useMemo(
     () =>
       Array.from(
         new Set(
-          run?.keyword_candidates.map((keyword) => keyword.category) ?? [],
+          run?.keyword_candidates
+            .filter((keyword) => keyword.marketing_term_type === "search_query")
+            .map((keyword) => keyword.query_family) ?? [],
         ),
       ).sort(),
     [run],
@@ -67,7 +70,11 @@ function ProductPerceptionPage() {
   const intents = useMemo(
     () =>
       Array.from(
-        new Set(run?.keyword_candidates.map((keyword) => keyword.intent) ?? []),
+        new Set(
+          run?.keyword_candidates
+            .filter((keyword) => keyword.marketing_term_type === "search_query")
+            .map((keyword) => keyword.intent) ?? [],
+        ),
       ).sort(),
     [run],
   );
@@ -124,7 +131,7 @@ function ProductPerceptionPage() {
                 <KeywordClusterSummary clusters={run.keyword_clusters} />
                 <KeywordFilters
                   value={filters}
-                  categories={categories}
+                  queryFamilies={queryFamilies}
                   intents={intents}
                   onChange={setFilters}
                 />

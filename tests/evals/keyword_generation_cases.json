@@ -1,0 +1,64 @@
+[
+  {
+    "name": "air_conditioner",
+    "product_name": "Midea 12000 BTU U Shaped Smart Inverter Window Air Conditioner",
+    "brand": "Midea",
+    "category": "Window air conditioner",
+    "description": "Midea 12000 BTU U Shaped Smart Inverter Window Air Conditioner for bedroom cooling.",
+    "features": ["u shaped design", "smart inverter", "quiet operation"],
+    "benefits": [
+      "Midea 12000 BTU U Shaped Smart Inverter Window Air Conditioner keeps rooms cool while allowing the window to open."
+    ],
+    "use_cases": ["bedroom cooling"],
+    "expected_any": ["midea window air conditioner", "u shaped window air conditioner"],
+    "bad_queries": [
+      "this product features a u shaped design that allows the window to open",
+      "midea 12000 btu u shaped smart inverter window air conditioner"
+    ]
+  },
+  {
+    "name": "xbox_controller",
+    "product_name": "Xbox Wireless Controller",
+    "brand": "Microsoft",
+    "category": "Game controller",
+    "description": "Xbox Wireless Controller with ergonomic grip for console gaming.",
+    "features": ["wireless", "ergonomic grip"],
+    "benefits": ["supports comfortable console gaming"],
+    "use_cases": ["console gaming"],
+    "expected_any": ["microsoft xbox controller", "wireless xbox controller"],
+    "bad_queries": [
+      "xbox wireless controller with ergonomic grip that supports comfortable console gaming",
+      "this product is designed for people who want better console gaming"
+    ]
+  },
+  {
+    "name": "coffee_maker",
+    "product_name": "Programmable Coffee Maker",
+    "brand": null,
+    "category": "Coffee maker",
+    "description": "Programmable coffee maker with thermal carafe for morning coffee.",
+    "features": ["programmable timer", "thermal carafe"],
+    "benefits": ["helps prepare morning coffee"],
+    "use_cases": ["morning coffee"],
+    "expected_any": ["programmable coffee maker", "coffee maker price"],
+    "bad_queries": [
+      "coffee maker comes with a thermal carafe and programmable timer for morning coffee",
+      "programmable coffee maker which makes it easy to prepare morning coffee"
+    ]
+  },
+  {
+    "name": "running_shoes",
+    "product_name": "Lightweight Cushioned Running Shoes",
+    "brand": "Nike",
+    "category": "Running shoes",
+    "description": "Nike lightweight cushioned running shoes for daily running.",
+    "features": ["lightweight", "cushioned sole", "breathable upper"],
+    "benefits": ["supports daily running comfort"],
+    "use_cases": ["daily running"],
+    "expected_any": ["nike running shoes", "lightweight running shoes"],
+    "bad_queries": [
+      "nike lightweight cushioned running shoes designed to provide daily running comfort",
+      "running shoes that can support daily running with cushioned sole and breathable upper"
+    ]
+  }
+]

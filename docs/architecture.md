@@ -34,7 +34,7 @@ flowchart TD
   K --> L["Score deterministic match features"]
   L --> M["Classify accepted, review, rejected, and alternate listings"]
   M --> N["Aggregate validated primary marketplace facts"]
-  N --> O["Generate keyword candidates"]
+  N --> O["Generate validated search-query candidates"]
   O --> P["Normalize and deduplicate"]
   P --> Q["Classify intent and category"]
   Q --> R["Cluster candidates"]

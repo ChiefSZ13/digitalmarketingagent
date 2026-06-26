@@ -27,6 +27,43 @@ class KeywordCategory(StrEnum):
     CONTENT_ANGLE = "content_angle"
 
 
+class MarketingTermType(StrEnum):
+    SEARCH_QUERY = "search_query"
+    CONTENT_TOPIC = "content_topic"
+    PRODUCT_FEATURE = "product_feature"
+    PRODUCT_BENEFIT = "product_benefit"
+    AUDIENCE_DESCRIPTION = "audience_description"
+
+
+class SearchQueryCategory(StrEnum):
+    BRAND_PRODUCT = "brand_product"
+    GENERIC_PRODUCT = "generic_product"
+    FEATURE = "feature"
+    USE_CASE = "use_case"
+    PROBLEM_SOLUTION = "problem_solution"
+    COMPARISON = "comparison"
+    REVIEW = "review"
+    TRANSACTIONAL = "transactional"
+    LOCAL_OR_SIZE_SPECIFIC = "local_or_size_specific"
+
+
+class SearchQueryRejectionReason(StrEnum):
+    EMPTY = "empty"
+    TOO_SHORT = "too_short"
+    TOO_LONG = "too_long"
+    SENTENCE_PUNCTUATION = "sentence_punctuation"
+    BANNED_PHRASE = "banned_phrase"
+    DESCRIPTION_COPY = "description_copy"
+    ATTRIBUTE_DENSE = "attribute_dense"
+    LOW_PRODUCT_RELEVANCE = "low_product_relevance"
+    LOW_QUERY_REALISM = "low_query_realism"
+    DUPLICATE = "duplicate"
+
+
+def _rejection_reason_list() -> list[SearchQueryRejectionReason]:
+    return []
+
+
 class ScoreComponents(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
@@ -72,6 +109,8 @@ class KeywordCandidate(BaseModel):
 
     text: str = Field(min_length=1)
     normalized_text: str = Field(min_length=1)
+    marketing_term_type: MarketingTermType = MarketingTermType.SEARCH_QUERY
+    query_family: SearchQueryCategory = SearchQueryCategory.GENERIC_PRODUCT
     intent: KeywordIntent
     category: KeywordCategory
     rationale: str = Field(min_length=1)
@@ -79,6 +118,18 @@ class KeywordCandidate(BaseModel):
     evidence_ids: list[str] = Field(min_length=1)
     relevance_score: float = Field(ge=0.0, le=1.0)
     confidence_score: float = Field(ge=0.0, le=1.0)
+    generation_confidence: float = Field(default=0.0, ge=0.0, le=1.0)
+    product_relevance_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    query_realism_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    specificity_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    commercial_intent_score: float = Field(default=0.0, ge=0.0, le=1.0)
+    source_concepts: list[str] = Field(default_factory=list)
+    origin: str = Field(default="deterministic_search_query_generator", min_length=1)
+    rejection_reasons: list[SearchQueryRejectionReason] = Field(
+        default_factory=_rejection_reason_list
+    )
+    eligible_for_live_enrichment: bool = False
+    generator_version: str = Field(default="search-query-generator-v1", min_length=1)
     score_components: ScoreComponents
     risk_flags: list[str] = Field(default_factory=list)
     enrichment: EnrichmentMetrics = Field(default_factory=EnrichmentMetrics)

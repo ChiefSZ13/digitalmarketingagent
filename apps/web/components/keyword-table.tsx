@@ -17,28 +17,39 @@ export function KeywordTable({ keywords, evidence, filters }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null);
   const filtered = useMemo(() => {
     const text = filters.text.toLowerCase();
-    const result = keywords.filter((keyword) => {
+    const searchKeywords = keywords.filter(
+      (keyword) => keyword.marketing_term_type === "search_query",
+    );
+    const result = searchKeywords.filter((keyword) => {
       const matchesText = keyword.text.toLowerCase().includes(text);
-      const matchesCategory =
-        filters.category === "all" || keyword.category === filters.category;
+      const matchesFamily =
+        filters.queryFamily === "all" ||
+        keyword.query_family === filters.queryFamily;
       const matchesIntent =
         filters.intent === "all" || keyword.intent === filters.intent;
+      const matchesEligibility =
+        filters.eligibility === "all" ||
+        (filters.eligibility === "eligible" &&
+          keyword.eligible_for_live_enrichment) ||
+        (filters.eligibility === "not_eligible" &&
+          !keyword.eligible_for_live_enrichment);
       return (
         matchesText &&
-        matchesCategory &&
+        matchesFamily &&
         matchesIntent &&
-        keyword.relevance_score >= filters.minRelevance &&
-        keyword.confidence_score >= filters.minConfidence
+        matchesEligibility &&
+        keyword.product_relevance_score >= filters.minRelevance &&
+        keyword.query_realism_score >= filters.minRealism
       );
     });
     return [...result].sort((left, right) => {
       if (filters.sort === "text") {
         return left.text.localeCompare(right.text);
       }
-      if (filters.sort === "confidence") {
-        return right.confidence_score - left.confidence_score;
+      if (filters.sort === "realism") {
+        return right.query_realism_score - left.query_realism_score;
       }
-      return right.relevance_score - left.relevance_score;
+      return right.product_relevance_score - left.product_relevance_score;
     });
   }, [filters, keywords]);
 
@@ -53,20 +64,22 @@ export function KeywordTable({ keywords, evidence, filters }: Props) {
       <div className="mt-4 min-w-0">
         <table className="w-full border-separate border-spacing-0 text-left text-sm">
           <colgroup className="hidden md:table-column-group">
-            <col className="w-[32%]" />
-            <col className="w-[15%]" />
-            <col className="w-[15%]" />
+            <col className="w-[28%]" />
+            <col className="w-[14%]" />
+            <col className="w-[12%]" />
             <col className="w-[12%]" />
             <col className="w-[12%]" />
             <col className="w-[14%]" />
+            <col className="w-[8%]" />
           </colgroup>
           <thead className="hidden md:table-header-group">
             <tr className="border-b border-gray-200 text-xs uppercase text-gray-500">
               <th className="py-2 pr-4 font-medium">Keyword</th>
-              <th className="py-2 pr-4 font-medium">Category</th>
+              <th className="py-2 pr-4 font-medium">Query family</th>
               <th className="py-2 pr-4 font-medium">Intent</th>
-              <th className="py-2 pr-4 font-medium">Relevance</th>
-              <th className="py-2 pr-4 font-medium">Confidence</th>
+              <th className="py-2 pr-4 font-medium">Product relevance</th>
+              <th className="py-2 pr-4 font-medium">Query realism</th>
+              <th className="py-2 pr-4 font-medium">Live metrics</th>
               <th className="py-2 font-medium">Details</th>
             </tr>
           </thead>
@@ -86,10 +99,10 @@ export function KeywordTable({ keywords, evidence, filters }: Props) {
                     </td>
                     <td className="grid min-w-0 grid-cols-[7rem_minmax(0,1fr)] gap-3 py-2 md:table-cell md:py-3 md:pr-4">
                       <span className="text-xs font-medium uppercase text-gray-500 md:hidden">
-                        Category
+                        Query family
                       </span>
                       <span className="min-w-0 break-words text-gray-700">
-                        {titleize(keyword.category)}
+                        {titleize(keyword.query_family)}
                       </span>
                     </td>
                     <td className="grid min-w-0 grid-cols-[7rem_minmax(0,1fr)] gap-3 py-2 md:table-cell md:py-3 md:pr-4">
@@ -102,18 +115,26 @@ export function KeywordTable({ keywords, evidence, filters }: Props) {
                     </td>
                     <td className="grid min-w-0 grid-cols-[7rem_minmax(0,1fr)] gap-3 py-2 md:table-cell md:py-3 md:pr-4">
                       <span className="text-xs font-medium uppercase text-gray-500 md:hidden">
-                        Relevance
+                        Product relevance
                       </span>
                       <span className="text-gray-700">
-                        {percent(keyword.relevance_score)}
+                        {percent(keyword.product_relevance_score)}
                       </span>
                     </td>
                     <td className="grid min-w-0 grid-cols-[7rem_minmax(0,1fr)] gap-3 py-2 md:table-cell md:py-3 md:pr-4">
                       <span className="text-xs font-medium uppercase text-gray-500 md:hidden">
-                        Confidence
+                        Query realism
                       </span>
                       <span className="text-gray-700">
-                        {percent(keyword.confidence_score)}
+                        {percent(keyword.query_realism_score)}
+                      </span>
+                    </td>
+                    <td className="grid min-w-0 grid-cols-[7rem_minmax(0,1fr)] gap-3 py-2 md:table-cell md:py-3 md:pr-4">
+                      <span className="text-xs font-medium uppercase text-gray-500 md:hidden">
+                        Live metrics
+                      </span>
+                      <span className="min-w-0 break-words text-gray-700">
+                        {liveMetricsStatus(keyword)}
                       </span>
                     </td>
                     <td className="grid min-w-0 grid-cols-[7rem_minmax(0,1fr)] gap-3 py-2 md:table-cell md:py-3">
@@ -147,7 +168,7 @@ export function KeywordTable({ keywords, evidence, filters }: Props) {
                     <tr className="block md:table-row">
                       <td
                         className="block min-w-0 pb-3 md:table-cell md:pr-4"
-                        colSpan={6}
+                        colSpan={7}
                       >
                         <KeywordDetails keyword={keyword} evidence={evidence} />
                       </td>
@@ -166,4 +187,17 @@ export function KeywordTable({ keywords, evidence, filters }: Props) {
       </div>
     </section>
   );
+}
+
+function liveMetricsStatus(keyword: KeywordCandidate): string {
+  const hasLiveMetrics =
+    keyword.enrichment.average_monthly_searches !== null ||
+    keyword.enrichment.competition_level !== null ||
+    keyword.enrichment.cpc_low !== null ||
+    keyword.enrichment.cpc_high !== null ||
+    keyword.enrichment.trend !== null;
+  if (hasLiveMetrics) {
+    return "Enriched";
+  }
+  return keyword.eligible_for_live_enrichment ? "Ready" : "Not eligible";
 }

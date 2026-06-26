@@ -2,7 +2,7 @@
 
 This repository contains the first working slice of an agentic digital-marketing platform: a FastAPI backend, a Next.js frontend, deterministic mock providers, and a live OpenAI perception adapter kept behind a provider port.
 
-Current scope is MVP 0, MVP 1, and MVP 1B. Inside MVP 1, the app also includes a data-collection sub-track for Marketplace Snapshot: one to five product images and a description become an evidence-backed product profile, provider-backed marketplace and price observations, categorized and ranked keyword candidates, keyword clusters, and browser-reviewable JSON export.
+Current scope is MVP 0, MVP 1, and MVP 1B. Inside MVP 1, the app also includes a data-collection sub-track for Marketplace Snapshot: one to five product images and a description become an evidence-backed product profile, provider-backed marketplace and price observations, realistic search-query candidates, keyword clusters, and browser-reviewable JSON export.
 
 ## Repository Layout
 
@@ -132,6 +132,16 @@ An optional ambiguity reviewer is configured but disabled by default:
 without an LLM API key, and no LLM can override hard identifier, model, brand,
 accessory, or condition conflicts.
 
+Keyword generation now produces only short, human-style search-query
+candidates in the `keyword_candidates` array. Product features, benefits,
+audience descriptions, and content ideas remain separate product-profile
+concepts unless they are rewritten as realistic queries. Each candidate includes
+`query_family`, `product_relevance_score`, `query_realism_score`,
+`generation_confidence`, `source_concepts`, and
+`eligible_for_live_enrichment`. These scores describe generation quality and do
+not represent search volume, CPC, rank, competition, or trend data. See
+`docs/keyword-architecture.md` for the root-cause note and validation policy.
+
 For production, set `CORS_ALLOWED_ORIGINS` to the exact frontend origin. For
 example, the Render backend for the Vercel app should use:
 
@@ -249,12 +259,13 @@ make typecheck
 make test
 make test-e2e
 make evaluate-product-matcher
+make evaluate-keyword-generation
 make check
 ```
 
 ## Frontend Workflow
 
-The single-page UI supports image upload, previews, image removal, required description validation, optional metadata, pending/error/success states, product profile review, marketplace snapshot review, keyword cluster cards, keyword search/filter/sort, expandable keyword evidence details, and JSON copy/download.
+The single-page UI supports image upload, previews, image removal, required description validation, optional metadata, pending/error/success states, product profile review, marketplace snapshot review, keyword cluster cards, search-query family filtering, query-realism filtering, expandable keyword evidence details, live-metrics readiness status, and JSON copy/download.
 
 ## Architecture
 
@@ -266,6 +277,7 @@ The backend is a modular monolith. Domain code defines Pydantic models and pure 
 - SerpAPI-backed Marketplace Snapshot uses live Google Shopping observations, not direct marketplace seller dashboards. It can rank observed sources and price ranges, but it cannot guarantee true cross-platform total units sold.
 - Mock Marketplace Snapshot is deterministic fixture data for local development and CI, not market evidence.
 - Live keyword-provider enrichment is not implemented.
+- Keyword generation is deterministic query synthesis, not proof of market demand.
 - PostgreSQL and Redis are optional future infrastructure only, not part of the MVP 1 runtime.
 - No authentication, publishing, ad-budget control, video generation, search-engine scraping, or autonomous optimization is included.
 

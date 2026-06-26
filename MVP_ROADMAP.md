@@ -44,9 +44,7 @@ Progress:
 - Added canonical product identity, normalized marketplace listing, match conflict, feature-score, match-result, and validation-summary models.
 - Added hard validation rules for identifiers, model numbers, brands, accessories, bundles, package quantities, variants, and non-new conditions.
 - Primary marketplace rankings and price ranges now use only exact/probable primary matches; rejected, uncertain, alternate package, alternate variant, and alternate condition listings remain visible but excluded from primary aggregation.
-- Added official-product brand-role verification so compatibility language such as `for Xbox` is not treated as product-brand evidence.
-- Added product relationships for official exact products, official family variants, licensed third-party alternatives, generic compatible alternatives, accessories/replacements, unrelated listings, and unknown cases.
-- Added frontend product-validation groups for official matches, official alternate variants, licensed third-party alternatives, compatible alternatives, needs review, and rejected listings.
+- Note: refined official-product verification inside the same validation pipeline. Compatibility language such as `for Xbox` is no longer treated as product-brand evidence, official variants and third-party alternatives are separated from primary aggregation, and the frontend now groups listings as official matches, official variants, licensed alternatives, compatible alternatives, needs review, or rejected.
 - Added `make evaluate-product-matcher` with fixture coverage for exact, ambiguous, accessory, multipack, variant, condition, official Xbox, licensed third-party Xbox, generic compatible Xbox, and retailer/seller ambiguity cases.
 
 Current limitations:
@@ -69,6 +67,7 @@ Progress:
 - Keyword candidates are generated from the normalized product profile.
 - Keywords are normalized, deduplicated, classified, scored, clustered, and rendered in the frontend.
 - Search volume, CPC, competition, and trend fields are intentionally not fabricated.
+- Note: refined keyword generation so `keyword_candidates` contains only short, realistic `search_query` terms. Product features, benefits, audiences, and content ideas are kept out of the enrichment lane unless rewritten as validated search queries with query family, product relevance, query realism, generation confidence, source concepts, rejection reasons, and live-enrichment eligibility. Added `make evaluate-keyword-generation` with air conditioner, Xbox controller, coffee maker, and running shoes smoke cases.
 
 ## MVP 1C — Live Keyword Enrichment — Planned
 

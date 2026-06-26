@@ -1,4 +1,4 @@
-.PHONY: install dev dev-api dev-web format lint typecheck typecheck-api typecheck-web test test-api test-web test-e2e test-unit test-integration test-evals evaluate-product-matcher check openapi docker-up docker-down
+.PHONY: install dev dev-api dev-web format lint typecheck typecheck-api typecheck-web test test-api test-web test-e2e test-unit test-integration test-evals evaluate-product-matcher evaluate-keyword-generation check openapi docker-up docker-down
 
 API_DIR := apps/api
 WEB_DIR := apps/web
@@ -54,6 +54,9 @@ test-evals:
 
 evaluate-product-matcher:
 	cd $(API_DIR) && uv run python ../../scripts/evaluate_product_matcher.py
+
+evaluate-keyword-generation:
+	cd $(API_DIR) && uv run python ../../scripts/evaluate_keyword_generation.py
 
 openapi:
 	cd $(API_DIR) && uv run python ../../scripts/export_schema.py
