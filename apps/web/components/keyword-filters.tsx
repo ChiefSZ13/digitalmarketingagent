@@ -4,29 +4,30 @@ import { Search } from "lucide-react";
 
 export type KeywordFilterState = {
   text: string;
-  category: string;
+  queryFamily: string;
   intent: string;
   minRelevance: number;
-  minConfidence: number;
-  sort: "relevance" | "confidence" | "text";
+  minRealism: number;
+  eligibility: "all" | "eligible" | "not_eligible";
+  sort: "relevance" | "realism" | "text";
 };
 
 type Props = {
   value: KeywordFilterState;
-  categories: string[];
+  queryFamilies: string[];
   intents: string[];
   onChange: (value: KeywordFilterState) => void;
 };
 
 export function KeywordFilters({
   value,
-  categories,
+  queryFamilies,
   intents,
   onChange,
 }: Props) {
   return (
     <div className="min-w-0 rounded border border-gray-200 bg-white p-4">
-      <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-6">
+      <div className="grid min-w-0 gap-4 sm:grid-cols-2 xl:grid-cols-7">
         <label className="min-w-0 sm:col-span-2 xl:col-span-2">
           <span className="block text-sm font-medium text-gray-900">
             Search keywords
@@ -44,10 +45,10 @@ export function KeywordFilters({
           </span>
         </label>
         <Select
-          label="Category"
-          value={value.category}
-          options={categories}
-          onChange={(category) => onChange({ ...value, category })}
+          label="Query family"
+          value={value.queryFamily}
+          options={queryFamilies}
+          onChange={(queryFamily) => onChange({ ...value, queryFamily })}
         />
         <Select
           label="Intent"
@@ -58,14 +59,25 @@ export function KeywordFilters({
         <Select
           label="Sort"
           value={value.sort}
-          options={["relevance", "confidence", "text"]}
+          options={["relevance", "realism", "text"]}
           onChange={(sort) =>
             onChange({ ...value, sort: sort as KeywordFilterState["sort"] })
           }
         />
+        <Select
+          label="Eligibility"
+          value={value.eligibility}
+          options={["eligible", "not_eligible"]}
+          onChange={(eligibility) =>
+            onChange({
+              ...value,
+              eligibility: eligibility as KeywordFilterState["eligibility"],
+            })
+          }
+        />
         <label className="min-w-0">
           <span className="block text-sm font-medium text-gray-900">
-            Min relevance
+            Min product relevance
           </span>
           <input
             className="mt-2 w-full"
@@ -81,7 +93,7 @@ export function KeywordFilters({
         </label>
         <label className="min-w-0">
           <span className="block text-sm font-medium text-gray-900">
-            Min confidence
+            Min query realism
           </span>
           <input
             className="mt-2 w-full"
@@ -89,9 +101,9 @@ export function KeywordFilters({
             min="0"
             max="1"
             step="0.05"
-            value={value.minConfidence}
+            value={value.minRealism}
             onChange={(event) =>
-              onChange({ ...value, minConfidence: Number(event.target.value) })
+              onChange({ ...value, minRealism: Number(event.target.value) })
             }
           />
         </label>

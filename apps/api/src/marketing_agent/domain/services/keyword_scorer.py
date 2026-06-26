@@ -1,6 +1,11 @@
 """Transparent keyword scoring."""
 
-from marketing_agent.domain.models.keyword import KeywordCandidate, KeywordIntent, ScoreComponents
+from marketing_agent.domain.models.keyword import (
+    KeywordCandidate,
+    KeywordIntent,
+    MarketingTermType,
+    ScoreComponents,
+)
 from marketing_agent.domain.models.product import ProductProfile
 from marketing_agent.domain.services.keyword_normalizer import normalize_keyword
 
@@ -78,13 +83,73 @@ def rescore_candidate(candidate: KeywordCandidate, profile: ProductProfile) -> K
         candidate.risk_flags,
         profile,
     )
-    confidence = round(
-        max(0.0, min(1.0, 0.65 * evidence_strength + 0.35 * components.product_match)), 4
+    product_relevance = (
+        candidate.product_relevance_score
+        if candidate.product_relevance_score > 0
+        else components.product_match
+    )
+    query_realism = candidate.query_realism_score if candidate.query_realism_score > 0 else 0.75
+    specificity = (
+        candidate.specificity_score if candidate.specificity_score > 0 else components.specificity
+    )
+    commercial_intent = (
+        candidate.commercial_intent_score
+        if candidate.commercial_intent_score > 0
+        else INTENT_VALUE[candidate.intent]
+    )
+    components = components.model_copy(
+        update={
+            "product_match": round(product_relevance, 4),
+            "intent_value": round(INTENT_VALUE[candidate.intent], 4),
+            "evidence_strength": round(evidence_strength, 4),
+            "specificity": round(specificity, 4),
+        }
+    )
+    generation_confidence = (
+        candidate.generation_confidence
+        if candidate.generation_confidence > 0
+        else round(
+            max(
+                0.0,
+                min(
+                    1.0,
+                    0.45 * evidence_strength + 0.35 * product_relevance + 0.20 * query_realism,
+                ),
+            ),
+            4,
+        )
+    )
+    relevance = round(
+        max(
+            0.0,
+            min(
+                1.0,
+                0.40 * product_relevance
+                + 0.25 * query_realism
+                + 0.15 * specificity
+                + 0.10 * commercial_intent
+                + 0.10 * evidence_strength
+                - components.risk_penalty,
+            ),
+        ),
+        4,
+    )
+    eligible_for_live_enrichment = (
+        candidate.marketing_term_type == MarketingTermType.SEARCH_QUERY
+        and not candidate.rejection_reasons
+        and product_relevance >= 0.55
+        and query_realism >= 0.7
     )
     return candidate.model_copy(
         update={
             "score_components": components,
-            "relevance_score": components.relevance(),
-            "confidence_score": confidence,
+            "relevance_score": relevance,
+            "confidence_score": generation_confidence,
+            "generation_confidence": generation_confidence,
+            "product_relevance_score": round(product_relevance, 4),
+            "query_realism_score": round(query_realism, 4),
+            "specificity_score": round(specificity, 4),
+            "commercial_intent_score": round(commercial_intent, 4),
+            "eligible_for_live_enrichment": eligible_for_live_enrichment,
         }
     )

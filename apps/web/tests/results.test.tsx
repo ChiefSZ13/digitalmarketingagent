@@ -24,13 +24,14 @@ describe("result rendering", () => {
     expect(screen.getByText("Unknowns")).toBeInTheDocument();
   });
 
-  it("filters keyword table by category and expands details", async () => {
+  it("filters keyword table by query family and expands details", async () => {
     const filters: KeywordFilterState = {
       text: "",
-      category: "negative",
+      queryFamily: "transactional",
       intent: "all",
       minRelevance: 0,
-      minConfidence: 0,
+      minRealism: 0,
+      eligibility: "all",
       sort: "relevance",
     };
     render(
@@ -40,14 +41,14 @@ describe("result rendering", () => {
         filters={filters}
       />,
     );
+    expect(screen.getByText("buy desk lamp")).toBeInTheDocument();
     expect(
-      screen.getByText("cheap Portable Rechargeable Desk Lamp"),
-    ).toBeInTheDocument();
-    expect(
-      screen.queryByText("buy Portable Rechargeable Desk Lamp"),
+      screen.queryByText("rechargeable desk lamp"),
     ).not.toBeInTheDocument();
-    await userEvent.click(screen.getByRole("button", { name: /inspect/i }));
-    expect(screen.getByText(/Negative keyword candidate/i)).toBeInTheDocument();
+    await userEvent.click(
+      screen.getAllByRole("button", { name: /inspect/i })[0],
+    );
+    expect(screen.getByText(/Transactional search query/i)).toBeInTheDocument();
   });
 
   it("renders marketplace snapshot estimates", () => {
@@ -110,25 +111,29 @@ describe("result rendering", () => {
     const onChange = vi.fn();
     const value: KeywordFilterState = {
       text: "",
-      category: "all",
+      queryFamily: "all",
       intent: "all",
       minRelevance: 0,
-      minConfidence: 0,
+      minRealism: 0,
+      eligibility: "all",
       sort: "relevance",
     };
     render(
       <KeywordFilters
         value={value}
-        categories={["negative"]}
+        queryFamilies={["transactional"]}
         intents={["commercial"]}
         onChange={onChange}
       />,
     );
     await userEvent.selectOptions(
-      screen.getByLabelText(/category/i),
-      "negative",
+      screen.getByLabelText(/query family/i),
+      "transactional",
     );
-    expect(onChange).toHaveBeenCalledWith({ ...value, category: "negative" });
+    expect(onChange).toHaveBeenCalledWith({
+      ...value,
+      queryFamily: "transactional",
+    });
   });
 
   it("copies JSON export", async () => {

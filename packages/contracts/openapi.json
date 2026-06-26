@@ -650,6 +650,14 @@
             "minLength": 1,
             "title": "Normalized Text"
           },
+          "marketing_term_type": {
+            "$ref": "#/components/schemas/MarketingTermType",
+            "default": "search_query"
+          },
+          "query_family": {
+            "$ref": "#/components/schemas/SearchQueryCategory",
+            "default": "generic_product"
+          },
           "intent": {
             "$ref": "#/components/schemas/KeywordIntent"
           },
@@ -685,6 +693,72 @@
             "maximum": 1.0,
             "minimum": 0.0,
             "title": "Confidence Score"
+          },
+          "generation_confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Generation Confidence",
+            "default": 0.0
+          },
+          "product_relevance_score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Product Relevance Score",
+            "default": 0.0
+          },
+          "query_realism_score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Query Realism Score",
+            "default": 0.0
+          },
+          "specificity_score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Specificity Score",
+            "default": 0.0
+          },
+          "commercial_intent_score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Commercial Intent Score",
+            "default": 0.0
+          },
+          "source_concepts": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Source Concepts"
+          },
+          "origin": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Origin",
+            "default": "deterministic_search_query_generator"
+          },
+          "rejection_reasons": {
+            "items": {
+              "$ref": "#/components/schemas/SearchQueryRejectionReason"
+            },
+            "type": "array",
+            "title": "Rejection Reasons"
+          },
+          "eligible_for_live_enrichment": {
+            "type": "boolean",
+            "title": "Eligible For Live Enrichment",
+            "default": false
+          },
+          "generator_version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Generator Version",
+            "default": "search-query-generator-v1"
           },
           "score_components": {
             "$ref": "#/components/schemas/ScoreComponents"
@@ -809,6 +883,17 @@
           "unknown"
         ],
         "title": "KeywordIntent"
+      },
+      "MarketingTermType": {
+        "type": "string",
+        "enum": [
+          "search_query",
+          "content_topic",
+          "product_feature",
+          "product_benefit",
+          "audience_description"
+        ],
+        "title": "MarketingTermType"
       },
       "MarketplaceListingValidation": {
         "properties": {
@@ -2201,7 +2286,7 @@
           "schema_version": {
             "type": "string",
             "title": "Schema Version",
-            "default": "2026-06-25.marketplace_validation.v3"
+            "default": "2026-06-25.search_query_keywords.v1"
           },
           "run_id": {
             "type": "string",
@@ -3186,6 +3271,37 @@
           "risk_penalty"
         ],
         "title": "ScoreComponents"
+      },
+      "SearchQueryCategory": {
+        "type": "string",
+        "enum": [
+          "brand_product",
+          "generic_product",
+          "feature",
+          "use_case",
+          "problem_solution",
+          "comparison",
+          "review",
+          "transactional",
+          "local_or_size_specific"
+        ],
+        "title": "SearchQueryCategory"
+      },
+      "SearchQueryRejectionReason": {
+        "type": "string",
+        "enum": [
+          "empty",
+          "too_short",
+          "too_long",
+          "sentence_punctuation",
+          "banned_phrase",
+          "description_copy",
+          "attribute_dense",
+          "low_product_relevance",
+          "low_query_realism",
+          "duplicate"
+        ],
+        "title": "SearchQueryRejectionReason"
       },
       "StageState": {
         "type": "string",
