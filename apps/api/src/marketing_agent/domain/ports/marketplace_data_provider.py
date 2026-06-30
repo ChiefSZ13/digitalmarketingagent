@@ -6,6 +6,7 @@ from typing import Protocol
 from marketing_agent.domain.models.evidence import EvidenceRecord
 from marketing_agent.domain.models.marketplace import MarketplaceSnapshot
 from marketing_agent.domain.models.product import ProductProfile
+from marketing_agent.domain.models.provider import ProviderRunTelemetry
 from marketing_agent.domain.models.run import ProductAnalysisRequest
 
 
@@ -20,6 +21,7 @@ class MarketplaceDataProviderResult:
     snapshot: MarketplaceSnapshot
     evidence: list[EvidenceRecord]
     warnings: list[str]
+    telemetry: ProviderRunTelemetry | None = None
 
 
 class MarketplaceDataProviderError(RuntimeError):

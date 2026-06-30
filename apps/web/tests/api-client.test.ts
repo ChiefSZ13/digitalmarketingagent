@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createPerceptionRun } from "@/lib/api-client";
+import { createPerceptionRun, saveMarketplaceOverride } from "@/lib/api-client";
 import fixture from "../public/fixtures/mock-run.json";
 
 describe("createPerceptionRun", () => {
@@ -36,5 +36,49 @@ describe("createPerceptionRun", () => {
     expect((request.body as FormData).get("description")).toBe(
       "Portable rechargeable desk lamp",
     );
+  });
+
+  it("saves marketplace overrides with the access key header", async () => {
+    const fetchMock = vi.fn<typeof fetch>(
+      async () =>
+        new Response(
+          JSON.stringify({
+            run_id: "run_123",
+            listing_id: "listing-1",
+            decision: "official_match",
+            note: null,
+            reviewer: "manual",
+            created_at: "2026-06-26T00:00:00Z",
+            updated_at: "2026-06-26T00:00:00Z",
+          }),
+          {
+            status: 201,
+            headers: { "content-type": "application/json" },
+          },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    await saveMarketplaceOverride({
+      runId: "run_123",
+      listingId: "listing-1",
+      decision: "official_match",
+      accessKey: "secret",
+    });
+
+    const request = fetchMock.mock.calls[0]?.[1];
+    expect(request).toBeDefined();
+    if (!request) {
+      throw new Error("Expected fetch request options.");
+    }
+    expect(request.method).toBe("POST");
+    expect(request.headers).toEqual({
+      "content-type": "application/json",
+      "X-App-Access-Key": "secret",
+    });
+    expect(JSON.parse(String(request.body))).toEqual({
+      listing_id: "listing-1",
+      decision: "official_match",
+    });
   });
 });

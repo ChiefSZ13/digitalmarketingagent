@@ -9,11 +9,15 @@ import {
   XCircle,
 } from "lucide-react";
 import Image from "next/image";
-import { type ReactNode, useMemo, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useState } from "react";
 import type {
   MarketplaceListingValidation,
   MarketplaceSnapshot,
 } from "@/lib/schemas";
+import {
+  type MarketplaceReviewDecision,
+  saveMarketplaceOverride,
+} from "@/lib/api-client";
 import {
   compactNumber,
   money,
@@ -22,13 +26,7 @@ import {
   titleize,
 } from "@/lib/formatters";
 
-type ReviewOverride =
-  | "official_match"
-  | "official_variant"
-  | "licensed_alternative"
-  | "compatible_alternative"
-  | "rejected"
-  | "alternate_package";
+type ReviewOverride = MarketplaceReviewDecision;
 type GroupKey =
   | "official"
   | "official_variant"
@@ -76,16 +74,55 @@ const GROUPS: Array<{
 
 export function MarketplaceSnapshotPanel({
   snapshot,
+  runId,
+  accessKey,
 }: {
   snapshot: MarketplaceSnapshot;
+  runId?: string;
+  accessKey?: string;
 }) {
-  const [overrides, setOverrides] = useState<Record<string, ReviewOverride>>(
-    {},
+  const initialOverrides = useMemo(
+    () => overridesFromSnapshot(snapshot),
+    [snapshot],
   );
+  const [overrides, setOverrides] =
+    useState<Record<string, ReviewOverride>>(initialOverrides);
+  const [pendingOverride, setPendingOverride] = useState<string | null>(null);
+  const [overrideError, setOverrideError] = useState<string | null>(null);
+  useEffect(() => {
+    setOverrides(initialOverrides);
+  }, [initialOverrides]);
   const grouped = useMemo(
     () => groupListings(snapshot.validated_listings, overrides),
     [snapshot.validated_listings, overrides],
   );
+  const handleOverride = async (
+    listingId: string,
+    override: ReviewOverride,
+  ) => {
+    setOverrideError(null);
+    setOverrides((current) => ({ ...current, [listingId]: override }));
+    if (!runId) {
+      return;
+    }
+    setPendingOverride(listingId);
+    try {
+      await saveMarketplaceOverride({
+        runId,
+        listingId,
+        decision: override,
+        accessKey,
+      });
+    } catch (error) {
+      setOverrideError(
+        error instanceof Error
+          ? error.message
+          : "Marketplace override could not be saved.",
+      );
+    } finally {
+      setPendingOverride(null);
+    }
+  };
 
   return (
     <section className="min-w-0 rounded border border-gray-200 bg-white p-4 sm:p-5">
@@ -117,6 +154,16 @@ export function MarketplaceSnapshotPanel({
             Mock or non-live data. Enable a marketplace data provider for live
             offer and price observations.
           </p>
+        </div>
+      ) : null}
+
+      {overrideError ? (
+        <div className="mt-4 flex gap-2 rounded border border-red-200 bg-red-50 p-3 text-sm text-red-900">
+          <AlertTriangle
+            aria-hidden="true"
+            className="mt-0.5 h-4 w-4 flex-none"
+          />
+          <p>{overrideError}</p>
         </div>
       ) : null}
 
@@ -257,12 +304,8 @@ export function MarketplaceSnapshotPanel({
               empty={group.empty}
               listings={grouped[group.key]}
               overrides={overrides}
-              onOverride={(listingId, override) =>
-                setOverrides((current) => ({
-                  ...current,
-                  [listingId]: override,
-                }))
-              }
+              pendingOverride={pendingOverride}
+              onOverride={handleOverride}
             />
           ))}
         </div>
@@ -295,12 +338,14 @@ function ValidationGroup({
   empty,
   listings,
   overrides,
+  pendingOverride,
   onOverride,
 }: {
   title: string;
   empty: string;
   listings: MarketplaceListingValidation[];
   overrides: Record<string, ReviewOverride>;
+  pendingOverride: string | null;
   onOverride: (listingId: string, override: ReviewOverride) => void;
 }) {
   return (
@@ -318,6 +363,7 @@ function ValidationGroup({
               key={validation.listing.listing_id}
               validation={validation}
               override={overrides[validation.listing.listing_id]}
+              isSaving={pendingOverride === validation.listing.listing_id}
               onOverride={onOverride}
             />
           ))
@@ -332,10 +378,12 @@ function ValidationGroup({
 function ListingRow({
   validation,
   override,
+  isSaving,
   onOverride,
 }: {
   validation: MarketplaceListingValidation;
   override: ReviewOverride | undefined;
+  isSaving: boolean;
   onOverride: (listingId: string, override: ReviewOverride) => void;
 }) {
   const { listing, match_result: match } = validation;
@@ -450,7 +498,8 @@ function ListingRow({
 
           {override ? (
             <p className="mt-3 inline-flex rounded border border-blue-200 bg-blue-50 px-2 py-1 text-xs font-medium text-blue-800">
-              Local review override: {titleize(override)}
+              Review override: {titleize(override)}
+              {isSaving ? " (saving)" : ""}
             </p>
           ) : null}
 
@@ -699,6 +748,22 @@ function groupListings(
     }
   }
   return grouped;
+}
+
+function overridesFromSnapshot(
+  snapshot: MarketplaceSnapshot,
+): Record<string, ReviewOverride> {
+  const overrides: Record<string, ReviewOverride> = {};
+  for (const override of snapshot.manual_overrides) {
+    overrides[override.listing_id] = override.decision as ReviewOverride;
+  }
+  for (const validation of snapshot.validated_listings) {
+    if (validation.manual_override) {
+      overrides[validation.listing.listing_id] = validation.manual_override
+        .decision as ReviewOverride;
+    }
+  }
+  return overrides;
 }
 
 function relationshipLabel(relationship: string): string {

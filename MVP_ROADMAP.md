@@ -53,7 +53,7 @@ Current limitations:
 - True `observed_units_sold` is only populated when a provider result explicitly exposes a sold/bought signal.
 - SerpAPI live-key validation should be run with a real key before relying on it in production.
 - Additional providers such as direct marketplace APIs, retailer feeds, Keepa, or eBay data can be added behind the same provider port later.
-- Manual listing review decisions are frontend-local for now and are not persisted as separate override records.
+- Manual listing review decisions are now persisted as separate override records under local artifacts and merged into API responses without mutating raw provider observations or matcher results.
 - Product matching is deterministic and intentionally conservative; the evaluation dataset is a small smoke benchmark, not a statistically meaningful market-wide benchmark.
 - The brand/product-line registry is intentionally tiny and currently only seeds Microsoft/Xbox examples; unknown brands still use generic deterministic logic.
 - Optional LLM ambiguity review is configured but not implemented or enabled.
@@ -69,9 +69,25 @@ Progress:
 - Search volume, CPC, competition, and trend fields are intentionally not fabricated.
 - Note: refined keyword generation so `keyword_candidates` contains only short, realistic `search_query` terms. Product features, benefits, audiences, and content ideas are kept out of the enrichment lane unless rewritten as validated search queries with query family, product relevance, query realism, generation confidence, source concepts, rejection reasons, and live-enrichment eligibility. Added `make evaluate-keyword-generation` with air conditioner, Xbox controller, coffee maker, and running shoes smoke cases.
 
-## MVP 1C — Live Keyword Enrichment — Planned
+## MVP 1C — Live Keyword Enrichment — In Progress
 
 Provider abstraction -> licensed search-volume, competition, CPC, trend, and related-term data.
+
+Progress:
+
+- Added a `KeywordMetricsProvider` port, normalized provider record model, and in-memory provider-response cache.
+- Added mock, null, and DataForSEO keyword metrics providers behind infrastructure adapters.
+- Added deterministic provider-record matching, trend calculation, related-term validation, market-signal scoring, and opportunity scoring that keep product relevance separate from market data.
+- Added `keyword_intelligence` to the API response with provider status, market/language labels, freshness, warnings, methodology, enriched keyword rows, related terms, and cluster-level opportunity summaries.
+- Added provider-run telemetry for marketplace and keyword provider calls, including operation, latency, status, result count, cache status, error category, and correlation ID.
+- Added frontend keyword intelligence rendering with filters for search text, intent, origin, competition, trend, and live-metric availability. Missing metrics are shown as missing or insufficient, not zero.
+- Added `make evaluate-keyword-enrichment` for a mock-backed enrichment smoke evaluation and `make smoke-test-marketplace-provider` for credential-gated live marketplace provider validation.
+
+Current limitations:
+
+- DataForSEO live keyword data still needs credential-backed smoke testing before production use.
+- The cache is in-memory for MVP 1C development and tests; Redis is still deferred to MVP 2 if needed.
+- Opportunity scoring is transparent and deterministic, but not yet calibrated against campaign outcomes.
 
 ## MVP 2 — Campaign Memory — Planned
 

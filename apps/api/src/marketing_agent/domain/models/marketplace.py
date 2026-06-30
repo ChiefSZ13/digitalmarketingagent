@@ -36,6 +36,10 @@ def _marketplace_price_estimate_list() -> list[MarketplacePriceEstimate]:
     return []
 
 
+def _marketplace_review_override_list() -> list[MarketplaceReviewOverride]:
+    return []
+
+
 class ProductCondition(StrEnum):
     NEW = "new"
     OPEN_BOX = "open_box"
@@ -82,6 +86,36 @@ class ProductRelationship(StrEnum):
     ACCESSORY_OR_REPLACEMENT = "accessory_or_replacement"
     UNRELATED = "unrelated"
     UNKNOWN = "unknown"
+
+
+class MarketplaceReviewDecision(StrEnum):
+    OFFICIAL_MATCH = "official_match"
+    OFFICIAL_VARIANT = "official_variant"
+    LICENSED_ALTERNATIVE = "licensed_alternative"
+    COMPATIBLE_ALTERNATIVE = "compatible_alternative"
+    REJECTED = "rejected"
+    ALTERNATE_PACKAGE = "alternate_package"
+
+
+class MarketplaceReviewOverrideInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    listing_id: str = Field(min_length=1)
+    decision: MarketplaceReviewDecision
+    note: str | None = Field(default=None, max_length=500)
+    reviewer: str = Field(default="manual", min_length=1, max_length=80)
+
+
+class MarketplaceReviewOverride(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    run_id: str = Field(min_length=1)
+    listing_id: str = Field(min_length=1)
+    decision: MarketplaceReviewDecision
+    note: str | None = Field(default=None, max_length=500)
+    reviewer: str = Field(default="manual", min_length=1, max_length=80)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
+    updated_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 
 class RankSignal(BaseModel):
@@ -274,6 +308,7 @@ class MarketplaceListingValidation(BaseModel):
 
     listing: NormalizedMarketplaceListing
     match_result: ProductMatchResult
+    manual_override: MarketplaceReviewOverride | None = None
 
 
 class MarketplaceValidationSummary(BaseModel):
@@ -379,6 +414,9 @@ class MarketplaceSnapshot(BaseModel):
         default_factory=_marketplace_price_estimate_list, max_length=10
     )
     warnings: list[str] = Field(default_factory=list)
+    manual_overrides: list[MarketplaceReviewOverride] = Field(
+        default_factory=_marketplace_review_override_list
+    )
     overall_confidence: float = Field(ge=0.0, le=1.0)
 
     @model_validator(mode="after")

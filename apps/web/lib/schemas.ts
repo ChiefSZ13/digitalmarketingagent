@@ -87,6 +87,7 @@ export const keywordCandidateSchema = z.object({
   commercial_intent_score: z.number().optional().default(0),
   source_concepts: z.array(z.string()).optional().default([]),
   origin: z.string().optional().default("deterministic_search_query_generator"),
+  origins: z.array(z.string()).optional().default(["model_generated"]),
   rejection_reasons: z.array(z.string()).optional().default([]),
   eligible_for_live_enrichment: z.boolean().optional().default(false),
   generator_version: z.string().optional().default("search-query-generator-v1"),
@@ -98,6 +99,26 @@ export const keywordCandidateSchema = z.object({
     specificity: z.number(),
     risk_penalty: z.number(),
   }),
+  market_signal_score: z.number().nullable().optional().default(null),
+  opportunity_score: z.number().nullable().optional().default(null),
+  opportunity_components: z
+    .object({
+      product_relevance: z.number(),
+      market_demand: z.number().nullable(),
+      competition_advantage: z.number().nullable(),
+      commercial_intent: z.number(),
+      cpc_efficiency: z.number().nullable(),
+      trend_signal: z.number().nullable(),
+      data_completeness: z.number(),
+      risk_penalty: z.number(),
+    })
+    .nullable()
+    .optional()
+    .default(null),
+  scoring_policy_version: z
+    .string()
+    .optional()
+    .default("keyword-opportunity-v1"),
   risk_flags: z.array(z.string()),
   enrichment: z.object({
     average_monthly_searches: z.number().nullable(),
@@ -106,6 +127,104 @@ export const keywordCandidateSchema = z.object({
     cpc_high: z.number().nullable(),
     trend: z.string().nullable(),
     source_confidence: z.number().nullable(),
+    provider: z.string().nullable().optional().default(null),
+    provider_record_id: z.string().nullable().optional().default(null),
+    provider_match_type: z.string().nullable().optional().default(null),
+    provider_match_confidence: z.number().nullable().optional().default(null),
+    matched_provider_term: z.string().nullable().optional().default(null),
+    market: z.string().nullable().optional().default(null),
+    language: z.string().nullable().optional().default(null),
+    currency: z.string().nullable().optional().default(null),
+    retrieved_at: z.string().nullable().optional().default(null),
+  }),
+});
+
+export const keywordMonthlyMetricSchema = z.object({
+  year: z.number(),
+  month: z.number(),
+  searches: z.number(),
+});
+
+export const keywordMarketMetricsSchema = z.object({
+  provider: z.string(),
+  provider_record_id: z.string().nullable(),
+  keyword: z.string(),
+  matched_provider_term: z.string(),
+  provider_match_type: z.string(),
+  provider_match_confidence: z.number(),
+  average_monthly_searches: z.number().nullable(),
+  competition: z.string().nullable(),
+  competition_index: z.number().nullable().optional().default(null),
+  cpc_low: z.number().nullable(),
+  cpc_high: z.number().nullable(),
+  currency: z.string().nullable(),
+  monthly_history: z.array(keywordMonthlyMetricSchema),
+  trend_direction: z.string(),
+  trend_strength: z.number().nullable(),
+  trend_explanation: z.string().nullable(),
+  market: z.string(),
+  language: z.string(),
+  retrieved_at: z.string(),
+  source_confidence: z.number().nullable(),
+});
+
+export const keywordOpportunityComponentsSchema = z.object({
+  product_relevance: z.number(),
+  market_demand: z.number().nullable(),
+  competition_advantage: z.number().nullable(),
+  commercial_intent: z.number(),
+  cpc_efficiency: z.number().nullable(),
+  trend_signal: z.number().nullable(),
+  data_completeness: z.number(),
+  risk_penalty: z.number(),
+});
+
+export const keywordIntelligenceKeywordSchema = z.object({
+  text: z.string(),
+  normalized_text: z.string(),
+  origins: z.array(z.string()),
+  intent: z.string(),
+  category: z.string(),
+  query_family: z.string(),
+  product_relevance_score: z.number(),
+  confidence_score: z.number(),
+  market_signal_score: z.number().nullable(),
+  opportunity_score: z.number().nullable(),
+  opportunity_components: keywordOpportunityComponentsSchema.nullable(),
+  scoring_policy_version: z.string(),
+  metrics: keywordMarketMetricsSchema.nullable(),
+  rationale: z.string(),
+  evidence_ids: z.array(z.string()),
+  risk_flags: z.array(z.string()),
+  source: z.string(),
+  related_to: z.string().nullable(),
+});
+
+export const keywordIntelligenceClusterSchema = z.object({
+  id: z.string(),
+  theme: z.string(),
+  primary_keyword: z.string(),
+  member_keywords: z.array(z.string()),
+  dominant_intent: z.string(),
+  aggregate_relevance: z.number(),
+  aggregate_opportunity: z.number().nullable(),
+  keyword_count: z.number(),
+});
+
+export const keywordIntelligenceSchema = z.object({
+  status: z.string(),
+  provider: z.string(),
+  market: z.string(),
+  language: z.string(),
+  collected_at: z.string(),
+  keywords: z.array(keywordIntelligenceKeywordSchema),
+  clusters: z.array(keywordIntelligenceClusterSchema),
+  warnings: z.array(z.string()),
+  methodology: z.object({
+    scoring_policy_version: z.string(),
+    matching_policy_version: z.string(),
+    trend_policy_version: z.string(),
+    notes: z.array(z.string()),
   }),
 });
 
@@ -318,6 +437,19 @@ export const productMatchResultSchema = z.object({
 export const marketplaceListingValidationSchema = z.object({
   listing: normalizedMarketplaceListingSchema,
   match_result: productMatchResultSchema,
+  manual_override: z
+    .object({
+      run_id: z.string(),
+      listing_id: z.string(),
+      decision: z.string(),
+      note: z.string().nullable(),
+      reviewer: z.string(),
+      created_at: z.string(),
+      updated_at: z.string(),
+    })
+    .nullable()
+    .optional()
+    .default(null),
 });
 
 export const marketplaceValidationSummarySchema = z.object({
@@ -355,7 +487,35 @@ export const marketplaceSnapshotSchema = z.object({
   platform_rankings: z.array(marketplacePlatformEstimateSchema),
   price_estimates: z.array(marketplacePriceEstimateSchema),
   warnings: z.array(z.string()),
+  manual_overrides: z
+    .array(
+      z.object({
+        run_id: z.string(),
+        listing_id: z.string(),
+        decision: z.string(),
+        note: z.string().nullable(),
+        reviewer: z.string(),
+        created_at: z.string(),
+        updated_at: z.string(),
+      }),
+    )
+    .optional()
+    .default([]),
   overall_confidence: z.number(),
+});
+
+export const providerRunTelemetrySchema = z.object({
+  provider: z.string(),
+  operation: z.string(),
+  started_at: z.string(),
+  completed_at: z.string(),
+  latency_ms: z.number(),
+  status: z.string(),
+  result_count: z.number(),
+  cache_status: z.string(),
+  cost_micros: z.number().nullable(),
+  error_category: z.string().nullable(),
+  correlation_id: z.string(),
 });
 
 export const perceptionRunSchema = z.object({
@@ -369,10 +529,27 @@ export const perceptionRunSchema = z.object({
   marketplace_snapshot: marketplaceSnapshotSchema,
   keyword_candidates: z.array(keywordCandidateSchema),
   keyword_clusters: z.array(keywordClusterSchema),
+  keyword_intelligence: keywordIntelligenceSchema.optional().default({
+    status: "skipped",
+    provider: "none",
+    market: "US",
+    language: "en",
+    collected_at: "1970-01-01T00:00:00.000Z",
+    keywords: [],
+    clusters: [],
+    warnings: [],
+    methodology: {
+      scoring_policy_version: "keyword-opportunity-v1",
+      matching_policy_version: "keyword-provider-match-v1",
+      trend_policy_version: "keyword-trend-v1",
+      notes: [],
+    },
+  }),
   warnings: z.array(z.string()),
   errors: z.array(z.string()),
   stage_statuses: z.array(z.record(z.unknown())),
   metadata: z.record(z.unknown()),
+  provider_runs: z.array(providerRunTelemetrySchema).optional().default([]),
 });
 
 export const analysisFormSchema = z.object({
@@ -392,6 +569,10 @@ export type ClaimFlag = z.infer<typeof claimFlagSchema>;
 export type ProductProfile = z.infer<typeof productProfileSchema>;
 export type KeywordCandidate = z.infer<typeof keywordCandidateSchema>;
 export type KeywordCluster = z.infer<typeof keywordClusterSchema>;
+export type KeywordIntelligence = z.infer<typeof keywordIntelligenceSchema>;
+export type KeywordIntelligenceKeyword = z.infer<
+  typeof keywordIntelligenceKeywordSchema
+>;
 export type MarketplacePlatformEstimate = z.infer<
   typeof marketplacePlatformEstimateSchema
 >;

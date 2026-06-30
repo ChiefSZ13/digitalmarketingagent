@@ -2,6 +2,7 @@ import { render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { JsonExport } from "@/components/json-export";
+import { KeywordIntelligencePanel } from "@/components/keyword-intelligence-panel";
 import {
   KeywordFilters,
   type KeywordFilterState,
@@ -97,14 +98,79 @@ describe("result rendering", () => {
     );
   });
 
-  it("supports local review override controls for uncertain listings", async () => {
+  it("supports review override controls for uncertain listings", async () => {
     render(<MarketplaceSnapshotPanel snapshot={run.marketplace_snapshot} />);
     await userEvent.click(
       screen.getByRole("button", { name: /accept as official match/i }),
     );
     expect(
-      screen.getByText(/Local review override: Official Match/i),
+      screen.getByText(/Review override: Official Match/i),
     ).toBeInTheDocument();
+  });
+
+  it("renders keyword intelligence metrics and missing-safe labels", () => {
+    const intelligence = {
+      ...run.keyword_intelligence,
+      status: "complete",
+      provider: "mock_keyword_metrics",
+      keywords: [
+        {
+          text: "rechargeable desk lamp",
+          normalized_text: "rechargeable desk lamp",
+          origins: ["model_generated"],
+          intent: "commercial",
+          category: "feature",
+          query_family: "feature",
+          product_relevance_score: 0.9,
+          confidence_score: 0.8,
+          market_signal_score: 0.6,
+          opportunity_score: 0.72,
+          opportunity_components: {
+            product_relevance: 0.9,
+            market_demand: 0.55,
+            competition_advantage: 0.85,
+            commercial_intent: 0.62,
+            cpc_efficiency: null,
+            trend_signal: 0.7,
+            data_completeness: 0.75,
+            risk_penalty: 0,
+          },
+          scoring_policy_version: "keyword-opportunity-v1",
+          metrics: {
+            provider: "mock_keyword_metrics",
+            provider_record_id: "mock-keyword-1",
+            keyword: "rechargeable desk lamp",
+            matched_provider_term: "rechargeable desk lamp",
+            provider_match_type: "exact",
+            provider_match_confidence: 1,
+            average_monthly_searches: 1800,
+            competition: "low",
+            competition_index: 0.25,
+            cpc_low: null,
+            cpc_high: null,
+            currency: "USD",
+            monthly_history: [],
+            trend_direction: "rising",
+            trend_strength: 0.4,
+            trend_explanation: "Recent demand increased.",
+            market: "US",
+            language: "en",
+            retrieved_at: "2026-06-26T00:00:00Z",
+            source_confidence: 0.8,
+          },
+          rationale: "Feature-led search query.",
+          evidence_ids: ["ev-description-1"],
+          risk_flags: [],
+          source: "generated_from_search_concepts",
+          related_to: null,
+        },
+      ],
+    };
+    render(<KeywordIntelligencePanel intelligence={intelligence} />);
+
+    expect(screen.getByText("Keyword Intelligence")).toBeInTheDocument();
+    expect(screen.getAllByText("1,800")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("Missing").length).toBeGreaterThan(0);
   });
 
   it("renders keyword filters and emits changes", async () => {

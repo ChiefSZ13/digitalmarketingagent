@@ -171,6 +171,74 @@
           }
         }
       }
+    },
+    "/api/v1/perception-runs/{run_id}/marketplace-overrides": {
+      "post": {
+        "tags": [
+          "perception"
+        ],
+        "summary": "Upsert Marketplace Override",
+        "operationId": "upsert_marketplace_override_api_v1_perception_runs__run_id__marketplace_overrides_post",
+        "parameters": [
+          {
+            "name": "run_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Run Id"
+            }
+          },
+          {
+            "name": "X-App-Access-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-App-Access-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MarketplaceReviewOverrideInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketplaceReviewOverride"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -270,6 +338,16 @@
         ],
         "title": "BrandRole"
       },
+      "CacheStatus": {
+        "type": "string",
+        "enum": [
+          "hit",
+          "miss",
+          "partial_hit",
+          "bypass"
+        ],
+        "title": "CacheStatus"
+      },
       "ClaimFlag": {
         "properties": {
           "claim": {
@@ -309,7 +387,8 @@
           "average_monthly_searches": {
             "anyOf": [
               {
-                "type": "integer"
+                "type": "integer",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -331,7 +410,8 @@
           "cpc_low": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -342,7 +422,8 @@
           "cpc_high": {
             "anyOf": [
               {
-                "type": "number"
+                "type": "number",
+                "minimum": 0.0
               },
               {
                 "type": "null"
@@ -373,6 +454,107 @@
               }
             ],
             "title": "Source Confidence"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "provider_record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Record Id"
+          },
+          "provider_match_type": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProviderMatchType"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "provider_match_confidence": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Match Confidence"
+          },
+          "matched_provider_term": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Matched Provider Term"
+          },
+          "market": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market"
+          },
+          "language": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Language"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "retrieved_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieved At"
           }
         },
         "additionalProperties": false,
@@ -742,6 +924,13 @@
             "title": "Origin",
             "default": "deterministic_search_query_generator"
           },
+          "origins": {
+            "items": {
+              "$ref": "#/components/schemas/KeywordOrigin"
+            },
+            "type": "array",
+            "title": "Origins"
+          },
           "rejection_reasons": {
             "items": {
               "$ref": "#/components/schemas/SearchQueryRejectionReason"
@@ -762,6 +951,47 @@
           },
           "score_components": {
             "$ref": "#/components/schemas/ScoreComponents"
+          },
+          "market_signal_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Signal Score"
+          },
+          "opportunity_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opportunity Score"
+          },
+          "opportunity_components": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KeywordOpportunityScoreComponents"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scoring_policy_version": {
+            "type": "string",
+            "title": "Scoring Policy Version",
+            "default": "keyword-opportunity-v1"
           },
           "risk_flags": {
             "items": {
@@ -872,6 +1102,321 @@
         ],
         "title": "KeywordCluster"
       },
+      "KeywordCompetition": {
+        "type": "string",
+        "enum": [
+          "low",
+          "medium",
+          "high",
+          "unknown"
+        ],
+        "title": "KeywordCompetition"
+      },
+      "KeywordEnrichmentStatus": {
+        "type": "string",
+        "enum": [
+          "complete",
+          "partial_success",
+          "failed",
+          "skipped"
+        ],
+        "title": "KeywordEnrichmentStatus"
+      },
+      "KeywordIntelligence": {
+        "properties": {
+          "status": {
+            "$ref": "#/components/schemas/KeywordEnrichmentStatus",
+            "default": "skipped"
+          },
+          "provider": {
+            "type": "string",
+            "title": "Provider",
+            "default": "none"
+          },
+          "market": {
+            "type": "string",
+            "title": "Market",
+            "default": "US"
+          },
+          "language": {
+            "type": "string",
+            "title": "Language",
+            "default": "en"
+          },
+          "collected_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Collected At"
+          },
+          "keywords": {
+            "items": {
+              "$ref": "#/components/schemas/KeywordIntelligenceKeyword"
+            },
+            "type": "array",
+            "title": "Keywords"
+          },
+          "clusters": {
+            "items": {
+              "$ref": "#/components/schemas/KeywordIntelligenceCluster"
+            },
+            "type": "array",
+            "title": "Clusters"
+          },
+          "warnings": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Warnings"
+          },
+          "methodology": {
+            "$ref": "#/components/schemas/KeywordIntelligenceMethodology"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "KeywordIntelligence"
+      },
+      "KeywordIntelligenceCluster": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 3,
+            "title": "Id"
+          },
+          "theme": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Theme"
+          },
+          "primary_keyword": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Primary Keyword"
+          },
+          "member_keywords": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Member Keywords"
+          },
+          "dominant_intent": {
+            "$ref": "#/components/schemas/KeywordIntent"
+          },
+          "aggregate_relevance": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Aggregate Relevance"
+          },
+          "aggregate_opportunity": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregate Opportunity"
+          },
+          "keyword_count": {
+            "type": "integer",
+            "minimum": 1.0,
+            "title": "Keyword Count"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "theme",
+          "primary_keyword",
+          "member_keywords",
+          "dominant_intent",
+          "aggregate_relevance",
+          "keyword_count"
+        ],
+        "title": "KeywordIntelligenceCluster"
+      },
+      "KeywordIntelligenceKeyword": {
+        "properties": {
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Text"
+          },
+          "normalized_text": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Normalized Text"
+          },
+          "origins": {
+            "items": {
+              "$ref": "#/components/schemas/KeywordOrigin"
+            },
+            "type": "array",
+            "minItems": 1,
+            "title": "Origins"
+          },
+          "intent": {
+            "$ref": "#/components/schemas/KeywordIntent"
+          },
+          "category": {
+            "$ref": "#/components/schemas/KeywordCategory"
+          },
+          "query_family": {
+            "$ref": "#/components/schemas/SearchQueryCategory"
+          },
+          "product_relevance_score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Product Relevance Score"
+          },
+          "confidence_score": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Confidence Score"
+          },
+          "market_signal_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Signal Score"
+          },
+          "opportunity_score": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Opportunity Score"
+          },
+          "opportunity_components": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KeywordOpportunityScoreComponents"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "scoring_policy_version": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Scoring Policy Version"
+          },
+          "metrics": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KeywordMarketMetrics"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "rationale": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Rationale"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
+          },
+          "risk_flags": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Risk Flags"
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Source"
+          },
+          "related_to": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Related To"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "text",
+          "normalized_text",
+          "origins",
+          "intent",
+          "category",
+          "query_family",
+          "product_relevance_score",
+          "confidence_score",
+          "scoring_policy_version",
+          "rationale",
+          "source"
+        ],
+        "title": "KeywordIntelligenceKeyword"
+      },
+      "KeywordIntelligenceMethodology": {
+        "properties": {
+          "scoring_policy_version": {
+            "type": "string",
+            "title": "Scoring Policy Version",
+            "default": "keyword-opportunity-v1"
+          },
+          "matching_policy_version": {
+            "type": "string",
+            "title": "Matching Policy Version",
+            "default": "keyword-provider-match-v1"
+          },
+          "trend_policy_version": {
+            "type": "string",
+            "title": "Trend Policy Version",
+            "default": "keyword-trend-v1"
+          },
+          "notes": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Notes"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "title": "KeywordIntelligenceMethodology"
+      },
       "KeywordIntent": {
         "type": "string",
         "enum": [
@@ -883,6 +1428,332 @@
           "unknown"
         ],
         "title": "KeywordIntent"
+      },
+      "KeywordMarketMetrics": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Provider"
+          },
+          "provider_record_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider Record Id"
+          },
+          "keyword": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Keyword"
+          },
+          "matched_provider_term": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Matched Provider Term"
+          },
+          "provider_match_type": {
+            "$ref": "#/components/schemas/ProviderMatchType"
+          },
+          "provider_match_confidence": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Provider Match Confidence"
+          },
+          "average_monthly_searches": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Average Monthly Searches"
+          },
+          "competition": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KeywordCompetition"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "competition_index": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Competition Index"
+          },
+          "cpc_low": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpc Low"
+          },
+          "cpc_high": {
+            "anyOf": [
+              {
+                "type": "number",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpc High"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 3,
+                "minLength": 3
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "monthly_history": {
+            "items": {
+              "$ref": "#/components/schemas/KeywordMonthlyMetric"
+            },
+            "type": "array",
+            "title": "Monthly History"
+          },
+          "trend_direction": {
+            "$ref": "#/components/schemas/KeywordTrendDirection",
+            "default": "unknown"
+          },
+          "trend_strength": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Strength"
+          },
+          "trend_explanation": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Explanation"
+          },
+          "market": {
+            "type": "string",
+            "minLength": 2,
+            "title": "Market"
+          },
+          "language": {
+            "type": "string",
+            "minLength": 2,
+            "title": "Language"
+          },
+          "retrieved_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Retrieved At"
+          },
+          "source_confidence": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Confidence"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "provider",
+          "keyword",
+          "matched_provider_term",
+          "provider_match_type",
+          "provider_match_confidence",
+          "market",
+          "language"
+        ],
+        "title": "KeywordMarketMetrics"
+      },
+      "KeywordMonthlyMetric": {
+        "properties": {
+          "year": {
+            "type": "integer",
+            "maximum": 2100.0,
+            "minimum": 2000.0,
+            "title": "Year"
+          },
+          "month": {
+            "type": "integer",
+            "maximum": 12.0,
+            "minimum": 1.0,
+            "title": "Month"
+          },
+          "searches": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Searches"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "year",
+          "month",
+          "searches"
+        ],
+        "title": "KeywordMonthlyMetric"
+      },
+      "KeywordOpportunityScoreComponents": {
+        "properties": {
+          "product_relevance": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Product Relevance"
+          },
+          "market_demand": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Market Demand"
+          },
+          "competition_advantage": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Competition Advantage"
+          },
+          "commercial_intent": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Commercial Intent"
+          },
+          "cpc_efficiency": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cpc Efficiency"
+          },
+          "trend_signal": {
+            "anyOf": [
+              {
+                "type": "number",
+                "maximum": 1.0,
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Trend Signal"
+          },
+          "data_completeness": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Data Completeness"
+          },
+          "risk_penalty": {
+            "type": "number",
+            "maximum": 1.0,
+            "minimum": 0.0,
+            "title": "Risk Penalty",
+            "default": 0.0
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "product_relevance",
+          "commercial_intent",
+          "data_completeness"
+        ],
+        "title": "KeywordOpportunityScoreComponents"
+      },
+      "KeywordOrigin": {
+        "type": "string",
+        "enum": [
+          "product_profile",
+          "model_generated",
+          "provider_related_term",
+          "manual"
+        ],
+        "title": "KeywordOrigin"
+      },
+      "KeywordTrendDirection": {
+        "type": "string",
+        "enum": [
+          "rising",
+          "flat",
+          "declining",
+          "seasonal",
+          "insufficient_data",
+          "unknown"
+        ],
+        "title": "KeywordTrendDirection"
       },
       "MarketingTermType": {
         "type": "string",
@@ -902,6 +1773,16 @@
           },
           "match_result": {
             "$ref": "#/components/schemas/ProductMatchResult"
+          },
+          "manual_override": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MarketplaceReviewOverride"
+              },
+              {
+                "type": "null"
+              }
+            ]
           }
         },
         "additionalProperties": false,
@@ -1237,6 +2118,110 @@
         ],
         "title": "MarketplacePriceEstimate"
       },
+      "MarketplaceReviewDecision": {
+        "type": "string",
+        "enum": [
+          "official_match",
+          "official_variant",
+          "licensed_alternative",
+          "compatible_alternative",
+          "rejected",
+          "alternate_package"
+        ],
+        "title": "MarketplaceReviewDecision"
+      },
+      "MarketplaceReviewOverride": {
+        "properties": {
+          "run_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Run Id"
+          },
+          "listing_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Listing Id"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/MarketplaceReviewDecision"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reviewer": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Reviewer",
+            "default": "manual"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "updated_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Updated At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "run_id",
+          "listing_id",
+          "decision"
+        ],
+        "title": "MarketplaceReviewOverride"
+      },
+      "MarketplaceReviewOverrideInput": {
+        "properties": {
+          "listing_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Listing Id"
+          },
+          "decision": {
+            "$ref": "#/components/schemas/MarketplaceReviewDecision"
+          },
+          "note": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Note"
+          },
+          "reviewer": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Reviewer",
+            "default": "manual"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "listing_id",
+          "decision"
+        ],
+        "title": "MarketplaceReviewOverrideInput"
+      },
       "MarketplaceSnapshot": {
         "properties": {
           "title": {
@@ -1330,6 +2315,13 @@
             },
             "type": "array",
             "title": "Warnings"
+          },
+          "manual_overrides": {
+            "items": {
+              "$ref": "#/components/schemas/MarketplaceReviewOverride"
+            },
+            "type": "array",
+            "title": "Manual Overrides"
           },
           "overall_confidence": {
             "type": "number",
@@ -2286,7 +3278,7 @@
           "schema_version": {
             "type": "string",
             "title": "Schema Version",
-            "default": "2026-06-25.search_query_keywords.v1"
+            "default": "2026-06-26.live_keyword_enrichment.v1"
           },
           "run_id": {
             "type": "string",
@@ -2339,6 +3331,9 @@
             "type": "array",
             "title": "Keyword Clusters"
           },
+          "keyword_intelligence": {
+            "$ref": "#/components/schemas/KeywordIntelligence"
+          },
           "warnings": {
             "items": {
               "type": "string"
@@ -2362,6 +3357,13 @@
           },
           "metadata": {
             "$ref": "#/components/schemas/ProviderMetadata"
+          },
+          "provider_runs": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderRunTelemetry"
+            },
+            "type": "array",
+            "title": "Provider Runs"
           }
         },
         "additionalProperties": false,
@@ -3094,6 +4096,19 @@
         ],
         "title": "ProductRelationship"
       },
+      "ProviderMatchType": {
+        "type": "string",
+        "enum": [
+          "exact",
+          "normalized",
+          "punctuation_insensitive",
+          "singular_plural",
+          "token_overlap",
+          "related_term",
+          "none"
+        ],
+        "title": "ProviderMatchType"
+      },
       "ProviderMetadata": {
         "properties": {
           "provider": {
@@ -3149,6 +4164,98 @@
           "prompt_version"
         ],
         "title": "ProviderMetadata"
+      },
+      "ProviderRunStatus": {
+        "type": "string",
+        "enum": [
+          "succeeded",
+          "partial_success",
+          "failed",
+          "skipped"
+        ],
+        "title": "ProviderRunStatus"
+      },
+      "ProviderRunTelemetry": {
+        "properties": {
+          "provider": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Provider"
+          },
+          "operation": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Operation"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "completed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Completed At"
+          },
+          "latency_ms": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Latency Ms"
+          },
+          "status": {
+            "$ref": "#/components/schemas/ProviderRunStatus"
+          },
+          "result_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Result Count",
+            "default": 0
+          },
+          "cache_status": {
+            "$ref": "#/components/schemas/CacheStatus",
+            "default": "bypass"
+          },
+          "cost_micros": {
+            "anyOf": [
+              {
+                "type": "integer",
+                "minimum": 0.0
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Cost Micros"
+          },
+          "error_category": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Category"
+          },
+          "correlation_id": {
+            "type": "string",
+            "minLength": 1,
+            "title": "Correlation Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "provider",
+          "operation",
+          "started_at",
+          "completed_at",
+          "latency_ms",
+          "status",
+          "correlation_id"
+        ],
+        "title": "ProviderRunTelemetry"
       },
       "ProviderUsage": {
         "properties": {

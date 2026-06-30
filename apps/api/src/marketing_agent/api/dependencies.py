@@ -8,11 +8,25 @@ from fastapi import Depends
 from marketing_agent.application.orchestration.perception_pipeline import PerceptionPipeline
 from marketing_agent.config import Settings, get_settings
 from marketing_agent.domain.ports.artifact_repository import ArtifactRepository
+from marketing_agent.domain.ports.keyword_data_provider import KeywordMetricsProvider
+from marketing_agent.domain.ports.keyword_metrics_cache import KeywordMetricsCache
 from marketing_agent.domain.ports.marketplace_data_provider import MarketplaceDataProvider
 from marketing_agent.domain.ports.perception_provider import PerceptionProvider
 from marketing_agent.domain.services.product_matcher import ProductMatcherConfig
 from marketing_agent.infrastructure.ai.mock_perception_provider import MockPerceptionProvider
 from marketing_agent.infrastructure.ai.openai_perception_provider import OpenAIPerceptionProvider
+from marketing_agent.infrastructure.keyword_data.dataforseo_keyword_metrics_provider import (
+    DataForSeoKeywordMetricsProvider,
+)
+from marketing_agent.infrastructure.keyword_data.in_memory_keyword_metrics_cache import (
+    InMemoryKeywordMetricsCache,
+)
+from marketing_agent.infrastructure.keyword_data.mock_keyword_metrics_provider import (
+    MockKeywordMetricsProvider,
+)
+from marketing_agent.infrastructure.keyword_data.null_keyword_metrics_provider import (
+    NullKeywordMetricsProvider,
+)
 from marketing_agent.infrastructure.marketplace.mock_marketplace_data_provider import (
     MockMarketplaceDataProvider,
 )
@@ -29,6 +43,11 @@ def get_repository_cached(artifact_dir: str) -> LocalArtifactRepository:
     from pathlib import Path
 
     return LocalArtifactRepository(Path(artifact_dir))
+
+
+@lru_cache
+def get_keyword_metrics_cache_cached() -> InMemoryKeywordMetricsCache:
+    return InMemoryKeywordMetricsCache()
 
 
 SettingsDep = Annotated[Settings, Depends(get_settings)]
@@ -73,15 +92,46 @@ def get_marketplace_provider(settings: SettingsDep) -> MarketplaceDataProvider:
     return MockMarketplaceDataProvider(matcher_config=matcher_config)
 
 
+def get_keyword_provider(settings: SettingsDep) -> KeywordMetricsProvider:
+    provider_name = settings.keyword_provider.lower()
+    if provider_name in {"none", "null", "disabled"}:
+        return NullKeywordMetricsProvider()
+    if provider_name == "dataforseo":
+        login = settings.dataforseo_login
+        password = settings.dataforseo_password or settings.keyword_provider_api_key
+        if not login or not password:
+            raise RuntimeError(
+                "DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD are required when "
+                "KEYWORD_PROVIDER=dataforseo"
+            )
+        return DataForSeoKeywordMetricsProvider(
+            login=login,
+            password=password,
+            timeout_seconds=settings.keyword_provider_timeout_seconds,
+            retries=settings.keyword_provider_retries,
+            location_name=settings.keyword_provider_location_name,
+            language_name=settings.keyword_provider_language_name,
+        )
+    return MockKeywordMetricsProvider()
+
+
+def get_keyword_cache() -> KeywordMetricsCache:
+    return get_keyword_metrics_cache_cached()
+
+
 def get_pipeline(
     settings: SettingsDep,
     provider: Annotated[PerceptionProvider, Depends(get_provider)],
     marketplace_provider: Annotated[MarketplaceDataProvider, Depends(get_marketplace_provider)],
+    keyword_provider: Annotated[KeywordMetricsProvider, Depends(get_keyword_provider)],
+    keyword_cache: Annotated[KeywordMetricsCache, Depends(get_keyword_cache)],
     repository: Annotated[ArtifactRepository, Depends(get_repository)],
 ) -> PerceptionPipeline:
     return PerceptionPipeline(
         settings=settings,
         provider=provider,
         marketplace_provider=marketplace_provider,
+        keyword_provider=keyword_provider,
+        keyword_cache=keyword_cache,
         repository=repository,
     )
