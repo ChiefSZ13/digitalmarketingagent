@@ -35,6 +35,23 @@ class Settings(BaseSettings):
     serpapi_api_key: str | None = None
     serpapi_location: str | None = "United States"
     marketplace_timeout_seconds: float = 20.0
+    keyword_provider: str = "mock"
+    keyword_provider_api_key: str | None = None
+    dataforseo_login: str | None = None
+    dataforseo_password: str | None = None
+    keyword_provider_timeout_seconds: float = 20.0
+    keyword_provider_retries: int = Field(default=2, ge=0, le=5)
+    keyword_provider_cache_ttl_seconds: int = Field(default=86_400, ge=0)
+    keyword_provider_batch_size: int = Field(default=20, gt=0, le=100)
+    keyword_provider_max_keywords: int = Field(default=40, gt=0, le=200)
+    keyword_provider_country: str = "US"
+    keyword_provider_location_name: str = "United States"
+    keyword_provider_language: str = "en"
+    keyword_provider_language_name: str = "English"
+    keyword_provider_currency: str = "USD"
+    keyword_scoring_policy_version: str = "keyword-opportunity-v1"
+    keyword_matching_policy_version: str = "keyword-provider-match-v1"
+    keyword_trend_policy_version: str = "keyword-trend-v1"
     product_matcher_version: str = "product-matcher-v2"
     product_match_exact_threshold: float = Field(default=0.93, ge=0.0, le=1.0)
     product_match_probable_threshold: float = Field(default=0.84, ge=0.0, le=1.0)

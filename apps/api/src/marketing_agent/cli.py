@@ -15,6 +15,18 @@ from marketing_agent.config import get_settings
 from marketing_agent.domain.models.run import ProductAnalysisRequest
 from marketing_agent.infrastructure.ai.mock_perception_provider import MockPerceptionProvider
 from marketing_agent.infrastructure.ai.openai_perception_provider import OpenAIPerceptionProvider
+from marketing_agent.infrastructure.keyword_data.dataforseo_keyword_metrics_provider import (
+    DataForSeoKeywordMetricsProvider,
+)
+from marketing_agent.infrastructure.keyword_data.in_memory_keyword_metrics_cache import (
+    InMemoryKeywordMetricsCache,
+)
+from marketing_agent.infrastructure.keyword_data.mock_keyword_metrics_provider import (
+    MockKeywordMetricsProvider,
+)
+from marketing_agent.infrastructure.keyword_data.null_keyword_metrics_provider import (
+    NullKeywordMetricsProvider,
+)
 from marketing_agent.infrastructure.marketplace.mock_marketplace_data_provider import (
     MockMarketplaceDataProvider,
 )
@@ -99,10 +111,33 @@ async def _analyze(
         raise typer.BadParameter(
             "SERPAPI_API_KEY is required when MARKETPLACE_DATA_PROVIDER=serpapi"
         )
+    keyword_provider_name = settings.keyword_provider.lower()
+    if keyword_provider_name == "dataforseo":
+        login = settings.dataforseo_login
+        password = settings.dataforseo_password or settings.keyword_provider_api_key
+        if not login or not password:
+            raise typer.BadParameter(
+                "DATAFORSEO_LOGIN and DATAFORSEO_PASSWORD are required when "
+                "KEYWORD_PROVIDER=dataforseo"
+            )
+        keyword_provider = DataForSeoKeywordMetricsProvider(
+            login=login,
+            password=password,
+            timeout_seconds=settings.keyword_provider_timeout_seconds,
+            retries=settings.keyword_provider_retries,
+            location_name=settings.keyword_provider_location_name,
+            language_name=settings.keyword_provider_language_name,
+        )
+    elif keyword_provider_name in {"none", "null", "disabled"}:
+        keyword_provider = NullKeywordMetricsProvider()
+    else:
+        keyword_provider = MockKeywordMetricsProvider()
     pipeline = PerceptionPipeline(
         settings=settings,
         provider=provider,
         marketplace_provider=marketplace_provider,
+        keyword_provider=keyword_provider,
+        keyword_cache=InMemoryKeywordMetricsCache(),
         repository=LocalArtifactRepository(settings.artifact_dir),
     )
     command = AnalyzeProductCommand(

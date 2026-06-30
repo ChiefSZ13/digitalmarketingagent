@@ -5,12 +5,20 @@ from marketing_agent.domain.models.evidence import (
 )
 from marketing_agent.domain.models.keyword import (
     KeywordCategory,
+    KeywordMonthlyMetric,
+    KeywordTrendDirection,
     MarketingTermType,
     SearchQueryCategory,
     SearchQueryRejectionReason,
 )
 from marketing_agent.domain.models.product import ProductProfile
 from marketing_agent.domain.services.keyword_clusterer import cluster_keywords
+from marketing_agent.domain.services.keyword_enrichment import (
+    KeywordEnrichmentConfig,
+    build_keyword_cache_key,
+    calculate_trend,
+    enrich_keyword_candidates,
+)
 from marketing_agent.domain.services.keyword_generator import generate_keyword_candidates
 from marketing_agent.domain.services.keyword_normalizer import (
     are_near_duplicates,
@@ -18,6 +26,12 @@ from marketing_agent.domain.services.keyword_normalizer import (
     normalize_keyword,
 )
 from marketing_agent.domain.services.search_query_validator import SearchQueryValidator
+from marketing_agent.infrastructure.keyword_data.in_memory_keyword_metrics_cache import (
+    InMemoryKeywordMetricsCache,
+)
+from marketing_agent.infrastructure.keyword_data.mock_keyword_metrics_provider import (
+    MockKeywordMetricsProvider,
+)
 
 
 def test_normalize_keyword_preserves_model_numbers() -> None:
@@ -123,6 +137,73 @@ def test_realistic_queries_for_common_product_types() -> None:
             candidate.normalized_text for candidate in generate_keyword_candidates(profile)
         }
         assert expected_terms.intersection(generated), generated
+
+
+def test_keyword_trend_uses_recent_three_months_against_previous_three() -> None:
+    direction, strength, explanation = calculate_trend(
+        [
+            KeywordMonthlyMetric(year=2026, month=1, searches=100),
+            KeywordMonthlyMetric(year=2026, month=2, searches=110),
+            KeywordMonthlyMetric(year=2026, month=3, searches=120),
+            KeywordMonthlyMetric(year=2026, month=4, searches=180),
+            KeywordMonthlyMetric(year=2026, month=5, searches=190),
+            KeywordMonthlyMetric(year=2026, month=6, searches=200),
+        ]
+    )
+
+    assert direction == KeywordTrendDirection.RISING
+    assert strength is not None and strength > 0
+    assert "three-month" in explanation
+
+
+def test_keyword_cache_key_includes_market_language_and_provider() -> None:
+    base = _enrichment_config(provider="mock", market="US", language="en")
+    same_keyword_other_market = _enrichment_config(provider="mock", market="GB", language="en")
+
+    assert build_keyword_cache_key("desk lamp", base) != build_keyword_cache_key(
+        "desk lamp", same_keyword_other_market
+    )
+    assert build_keyword_cache_key("Desk Lamp", base) == build_keyword_cache_key("desk lamp", base)
+
+
+async def test_mock_keyword_enrichment_adds_metrics_without_fabricating_missing_values() -> None:
+    profile = _profile()
+    generated = deduplicate_keywords(generate_keyword_candidates(profile))
+    result = await enrich_keyword_candidates(
+        profile=profile,
+        candidates=generated,
+        provider=MockKeywordMetricsProvider(scenario="missing"),
+        cache=InMemoryKeywordMetricsCache(),
+        config=_enrichment_config(),
+    )
+
+    assert result.intelligence.status in {"complete", "partial_success"}
+    assert result.intelligence.keywords
+    enriched = [keyword for keyword in result.candidates if keyword.enrichment.provider]
+    assert enriched
+    assert all(keyword.enrichment.cpc_low is None for keyword in enriched)
+    assert all(keyword.opportunity_score is not None for keyword in enriched)
+    assert any(keyword.source == "keyword_provider_related_terms" for keyword in result.candidates)
+
+
+def _enrichment_config(
+    *,
+    provider: str = "mock",
+    market: str = "US",
+    language: str = "en",
+) -> KeywordEnrichmentConfig:
+    return KeywordEnrichmentConfig(
+        provider=provider,
+        market=market,
+        language=language,
+        currency="USD",
+        max_keywords=20,
+        batch_size=10,
+        cache_ttl_seconds=3600,
+        scoring_policy_version="keyword-opportunity-v1",
+        matching_policy_version="keyword-provider-match-v1",
+        trend_policy_version="keyword-trend-v1",
+    )
 
 
 def _profile(

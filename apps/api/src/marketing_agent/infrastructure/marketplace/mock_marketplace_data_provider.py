@@ -8,6 +8,11 @@ from marketing_agent.domain.models.marketplace import (
     ProductCondition,
     RankSignal,
 )
+from marketing_agent.domain.models.provider import (
+    CacheStatus,
+    ProviderRunStatus,
+    build_provider_telemetry,
+)
 from marketing_agent.domain.ports.marketplace_data_provider import (
     MarketplaceDataProviderRequest,
     MarketplaceDataProviderResult,
@@ -28,6 +33,7 @@ class MockMarketplaceDataProvider:
     async def fetch_snapshot(
         self, request: MarketplaceDataProviderRequest
     ) -> MarketplaceDataProviderResult:
+        started_at = datetime.now(UTC)
         product_name = _product_name(request)
         query = build_marketplace_search_query(
             request=request.request,
@@ -78,6 +84,15 @@ class MockMarketplaceDataProvider:
             snapshot=snapshot,
             evidence=[*provider_evidence, *validation_evidence],
             warnings=snapshot.warnings,
+            telemetry=build_provider_telemetry(
+                provider="mock_marketplace",
+                operation="marketplace_snapshot",
+                started_at=started_at,
+                status=ProviderRunStatus.SUCCEEDED,
+                result_count=len(snapshot.validated_listings),
+                cache_status=CacheStatus.BYPASS,
+                correlation_id="mock-marketplace-provider-run",
+            ),
         )
 
 

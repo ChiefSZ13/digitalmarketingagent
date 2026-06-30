@@ -5,7 +5,10 @@ import httpx
 import pytest
 from fastapi import FastAPI
 
-from marketing_agent.api.dependencies import get_repository_cached
+from marketing_agent.api.dependencies import (
+    get_keyword_metrics_cache_cached,
+    get_repository_cached,
+)
 from marketing_agent.api.security import ACCESS_KEY_HEADER, get_perception_rate_limiter
 from marketing_agent.config import Settings, get_settings
 from marketing_agent.main import create_app
@@ -18,12 +21,14 @@ def _create_test_app(tmp_path: Path, **settings_overrides: Any) -> FastAPI:
         "artifact_dir": tmp_path / "runs",
         "perception_provider": "mock",
         "marketplace_data_provider": "mock",
+        "keyword_provider": "mock",
         "serpapi_api_key": None,
         "app_access_key": None,
     }
     settings_values.update(settings_overrides)
     app.dependency_overrides[get_settings] = lambda: Settings(**settings_values)
     get_repository_cached.cache_clear()
+    get_keyword_metrics_cache_cached.cache_clear()
     get_perception_rate_limiter().reset()
     return app
 
@@ -80,11 +85,52 @@ async def test_create_and_get_perception_run(tmp_path: Path) -> None:
         assert len(payload["marketplace_snapshot"]["platform_rankings"]) == 10
         assert payload["marketplace_snapshot"]["is_live_data"] is False
         assert payload["keyword_clusters"]
+        assert payload["keyword_intelligence"]["status"] in {"complete", "partial_success"}
+        assert payload["keyword_intelligence"]["keywords"]
+        assert any(
+            keyword["metrics"] is not None
+            for keyword in payload["keyword_intelligence"]["keywords"]
+        )
+        assert payload["provider_runs"]
         assert payload["warnings"]
 
         fetched = await client.get(f"/api/v1/perception-runs/{payload['run_id']}")
         assert fetched.status_code == 200
         assert fetched.json()["run_id"] == payload["run_id"]
+
+
+@pytest.mark.asyncio
+async def test_marketplace_override_is_persisted_separately(tmp_path: Path) -> None:
+    app = _create_test_app(tmp_path)
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.post("/api/v1/perception-runs", **_valid_upload())
+        assert response.status_code == 201, response.text
+        payload = response.json()
+        run_id = payload["run_id"]
+        listing_id = payload["marketplace_snapshot"]["validated_listings"][0]["listing"][
+            "listing_id"
+        ]
+
+        override = await client.post(
+            f"/api/v1/perception-runs/{run_id}/marketplace-overrides",
+            json={"listing_id": listing_id, "decision": "official_match"},
+        )
+        assert override.status_code == 201, override.text
+        assert override.json()["listing_id"] == listing_id
+
+        fetched = await client.get(f"/api/v1/perception-runs/{run_id}")
+        fetched_payload = fetched.json()
+        assert (
+            fetched_payload["marketplace_snapshot"]["manual_overrides"][0]["listing_id"]
+            == listing_id
+        )
+        assert (
+            fetched_payload["marketplace_snapshot"]["validated_listings"][0]["manual_override"][
+                "decision"
+            ]
+            == "official_match"
+        )
 
 
 @pytest.mark.asyncio

@@ -5,11 +5,20 @@ from enum import StrEnum
 
 from pydantic import BaseModel, ConfigDict, Field
 
-from marketing_agent.domain.models.keyword import KeywordCandidate, KeywordCluster
+from marketing_agent.domain.models.keyword import (
+    KeywordCandidate,
+    KeywordCluster,
+    KeywordIntelligence,
+)
 from marketing_agent.domain.models.marketplace import MarketplaceSnapshot
 from marketing_agent.domain.models.product import ProductProfile
+from marketing_agent.domain.models.provider import ProviderRunTelemetry
 
-SCHEMA_VERSION = "2026-06-25.search_query_keywords.v1"
+SCHEMA_VERSION = "2026-06-26.live_keyword_enrichment.v1"
+
+
+def _provider_run_telemetry_list() -> list[ProviderRunTelemetry]:
+    return []
 
 
 class StageState(StrEnum):
@@ -85,7 +94,9 @@ class PerceptionRun(BaseModel):
     marketplace_snapshot: MarketplaceSnapshot
     keyword_candidates: list[KeywordCandidate]
     keyword_clusters: list[KeywordCluster]
+    keyword_intelligence: KeywordIntelligence = Field(default_factory=KeywordIntelligence)
     warnings: list[str] = Field(default_factory=list)
     errors: list[str] = Field(default_factory=list)
     stage_statuses: list[StageStatus]
     metadata: ProviderMetadata
+    provider_runs: list[ProviderRunTelemetry] = Field(default_factory=_provider_run_telemetry_list)

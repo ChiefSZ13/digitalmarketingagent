@@ -2,7 +2,7 @@
 
 This repository contains the first working slice of an agentic digital-marketing platform: a FastAPI backend, a Next.js frontend, deterministic mock providers, and a live OpenAI perception adapter kept behind a provider port.
 
-Current scope is MVP 0, MVP 1, and MVP 1B. Inside MVP 1, the app also includes a data-collection sub-track for Marketplace Snapshot: one to five product images and a description become an evidence-backed product profile, provider-backed marketplace and price observations, realistic search-query candidates, keyword clusters, and browser-reviewable JSON export.
+Current scope is MVP 0, MVP 1, MVP 1B, and the first MVP 1C live keyword-enrichment slice. Inside MVP 1, the app also includes a data-collection sub-track for Marketplace Snapshot: one to five product images and a description become an evidence-backed product profile, provider-backed marketplace and price observations, realistic search-query candidates, live-enriched keyword intelligence, keyword clusters, and browser-reviewable JSON export.
 
 ## Repository Layout
 
@@ -48,6 +48,15 @@ OPENAI_MODEL=gpt-4.1-mini
 MARKETPLACE_DATA_PROVIDER=mock
 SERPAPI_API_KEY=
 SERPAPI_LOCATION=United States
+KEYWORD_PROVIDER=mock
+KEYWORD_PROVIDER_API_KEY=
+DATAFORSEO_LOGIN=
+DATAFORSEO_PASSWORD=
+KEYWORD_PROVIDER_COUNTRY=US
+KEYWORD_PROVIDER_LOCATION_NAME=United States
+KEYWORD_PROVIDER_LANGUAGE=en
+KEYWORD_PROVIDER_LANGUAGE_NAME=English
+KEYWORD_PROVIDER_CURRENCY=USD
 PRODUCT_MATCHER_VERSION=product-matcher-v2
 PRODUCT_MATCH_EXACT_THRESHOLD=0.93
 PRODUCT_MATCH_PROBABLE_THRESHOLD=0.84
@@ -123,9 +132,9 @@ Each listing also exposes a `relationship`, such as
 
 The frontend groups listings as official matches, official alternate variants,
 licensed third-party alternatives, other compatible alternatives, needs review,
-and rejected. Needs-review rows have local-only review actions for this
-milestone. These overrides do not mutate raw provider observations or stored
-artifacts.
+and rejected. Needs-review rows can save manual review overrides through the API.
+Overrides are stored separately from raw provider observations and deterministic
+matcher results, then merged into GET responses for display.
 
 An optional ambiguity reviewer is configured but disabled by default:
 `AMBIGUOUS_MATCH_REVIEWER_ENABLED=false`. The deterministic matcher works
@@ -141,6 +150,29 @@ concepts unless they are rewritten as realistic queries. Each candidate includes
 `eligible_for_live_enrichment`. These scores describe generation quality and do
 not represent search volume, CPC, rank, competition, or trend data. See
 `docs/keyword-architecture.md` for the root-cause note and validation policy.
+
+MVP 1C adds live keyword enrichment behind `KEYWORD_PROVIDER`. The default
+`mock` provider returns deterministic fixture metrics for local development and
+CI. `KEYWORD_PROVIDER=null` disables enrichment. `KEYWORD_PROVIDER=dataforseo`
+uses the backend-only DataForSEO adapter:
+
+```bash
+KEYWORD_PROVIDER=dataforseo
+DATAFORSEO_LOGIN=your_dataforseo_login
+DATAFORSEO_PASSWORD=your_dataforseo_password
+KEYWORD_PROVIDER_COUNTRY=US
+KEYWORD_PROVIDER_LOCATION_NAME=United States
+KEYWORD_PROVIDER_LANGUAGE=en
+KEYWORD_PROVIDER_LANGUAGE_NAME=English
+KEYWORD_PROVIDER_CURRENCY=USD
+```
+
+The API returns a `keyword_intelligence` section with provider status, market,
+language, collected timestamp, enriched keyword rows, opportunity scores,
+related provider terms, warnings, and methodology. Missing provider fields stay
+`null`; the UI shows them as missing or insufficient and does not treat them as
+zero. Provider responses are cached by provider, normalized keyword, market,
+language, currency, and policy versions.
 
 For production, set `CORS_ALLOWED_ORIGINS` to the exact frontend origin. For
 example, the Render backend for the Vercel app should use:
@@ -236,7 +268,7 @@ curl -X POST http://127.0.0.1:8010/api/v1/perception-runs \
   -F "language=en-US"
 ```
 
-The response contains a `run_id`, product profile sections, marketplace snapshot, evidence records, keyword candidates, clusters, warnings, stage statuses, and provider metadata. Search volume, CPC, competition, and trend fields are reserved for MVP 1C and remain `null` in this slice.
+The response contains a `run_id`, product profile sections, marketplace snapshot, evidence records, keyword candidates, keyword intelligence, clusters, warnings, stage statuses, provider-run telemetry, and provider metadata.
 
 ## CLI Example
 
@@ -260,27 +292,29 @@ make test
 make test-e2e
 make evaluate-product-matcher
 make evaluate-keyword-generation
+make evaluate-keyword-enrichment
+make smoke-test-marketplace-provider
 make check
 ```
 
 ## Frontend Workflow
 
-The single-page UI supports image upload, previews, image removal, required description validation, optional metadata, pending/error/success states, product profile review, marketplace snapshot review, keyword cluster cards, search-query family filtering, query-realism filtering, expandable keyword evidence details, live-metrics readiness status, and JSON copy/download.
+The single-page UI supports image upload, previews, image removal, required description validation, optional metadata, pending/error/success states, product profile review, marketplace snapshot review with persisted manual overrides, keyword cluster cards, search-query family filtering, query-realism filtering, live keyword-intelligence filtering, expandable metric details, missing-metric labeling, and JSON copy/download.
 
 ## Architecture
 
-The backend is a modular monolith. Domain code defines Pydantic models and pure services. Application orchestration coordinates the pipeline through ports. Infrastructure implements the mock perception provider, OpenAI perception provider, mock marketplace provider, SerpAPI marketplace provider, image validation, and local artifact repository. API routes map HTTP requests to the same pipeline used by the CLI.
+The backend is a modular monolith. Domain code defines Pydantic models and pure services. Application orchestration coordinates the pipeline through ports. Infrastructure implements the mock perception provider, OpenAI perception provider, mock marketplace provider, SerpAPI marketplace provider, mock/null/DataForSEO keyword metrics providers, in-memory keyword metric cache, image validation, and local artifact repository. API routes map HTTP requests to the same pipeline used by the CLI.
 
 ## Limitations
 
 - Mock perception does not make factual visual claims beyond upload validity and image dimensions.
 - SerpAPI-backed Marketplace Snapshot uses live Google Shopping observations, not direct marketplace seller dashboards. It can rank observed sources and price ranges, but it cannot guarantee true cross-platform total units sold.
 - Mock Marketplace Snapshot is deterministic fixture data for local development and CI, not market evidence.
-- Live keyword-provider enrichment is not implemented.
-- Keyword generation is deterministic query synthesis, not proof of market demand.
+- DataForSEO-backed keyword enrichment depends on provider account access and approximate market/language metrics; mock keyword enrichment is fixture data, not market evidence.
+- Keyword generation is deterministic query synthesis. Live enrichment can add approximate market signals, but it is not proof of exact demand.
 - PostgreSQL and Redis are optional future infrastructure only, not part of the MVP 1 runtime.
 - No authentication, publishing, ad-budget control, video generation, search-engine scraping, or autonomous optimization is included.
 
 ## Recommended Next Task
 
-MVP 1C: add a `KeywordDataProvider` implementation with rate limiting, retries, caching, provider contract tests, and clear market/language labeling for approximate metrics.
+Broaden MVP 1C provider coverage with live-key smoke runs, fixture captures, and additional provider contract tests before relying on the metrics for production decisions.

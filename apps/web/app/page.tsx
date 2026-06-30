@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 import { AnalysisProgress } from "@/components/analysis-progress";
 import { JsonExport } from "@/components/json-export";
 import { KeywordClusterSummary } from "@/components/keyword-cluster-summary";
+import { KeywordIntelligencePanel } from "@/components/keyword-intelligence-panel";
 import { MarketplaceSnapshotPanel } from "@/components/marketplace-snapshot-panel";
 import {
   type KeywordFilterState,
@@ -41,6 +42,7 @@ export default function Page() {
 
 function ProductPerceptionPage() {
   const [run, setRun] = useState<PerceptionRun | null>(null);
+  const [accessKey, setAccessKey] = useState<string>("");
   const [filters, setFilters] = useState<KeywordFilterState>(INITIAL_FILTERS);
   const mutation = useMutation({
     mutationFn: ({
@@ -50,8 +52,9 @@ function ProductPerceptionPage() {
       values: AnalysisFormValues;
       files: File[];
     }) => createPerceptionRun(values, files),
-    onSuccess: (result) => {
+    onSuccess: (result, variables) => {
       setRun(result);
+      setAccessKey(variables.values.access_key?.trim() ?? "");
       setFilters(INITIAL_FILTERS);
     },
   });
@@ -96,13 +99,14 @@ function ProductPerceptionPage() {
     <main className="min-h-screen overflow-x-clip bg-white">
       <div className="mx-auto w-full max-w-7xl px-3 py-6 sm:px-6 lg:px-8">
         <header className="mb-6 border-b border-gray-200 pb-5">
-          <p className="text-sm font-medium text-accent-600">MVP 1B</p>
+          <p className="text-sm font-medium text-accent-600">MVP 1C</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-normal text-gray-950 sm:text-3xl">
             Product Perception and Keyword Intelligence
           </h1>
           <p className="mt-2 max-w-3xl text-sm text-gray-600">
             Upload product images and a description to generate an
-            evidence-backed profile and categorized keyword clusters.
+            evidence-backed profile, marketplace observations, and live keyword
+            intelligence.
           </p>
         </header>
 
@@ -113,6 +117,7 @@ function ProductPerceptionPage() {
               onSubmit={(values, files) => mutation.mutate({ values, files })}
               onReset={() => {
                 setRun(null);
+                setAccessKey("");
                 setFilters(INITIAL_FILTERS);
                 mutation.reset();
               }}
@@ -127,8 +132,15 @@ function ProductPerceptionPage() {
             {run ? (
               <>
                 <ProductProfilePanel profile={run.product_profile} />
-                <MarketplaceSnapshotPanel snapshot={run.marketplace_snapshot} />
+                <MarketplaceSnapshotPanel
+                  accessKey={accessKey}
+                  runId={run.run_id}
+                  snapshot={run.marketplace_snapshot}
+                />
                 <KeywordClusterSummary clusters={run.keyword_clusters} />
+                <KeywordIntelligencePanel
+                  intelligence={run.keyword_intelligence}
+                />
                 <KeywordFilters
                   value={filters}
                   queryFamilies={queryFamilies}

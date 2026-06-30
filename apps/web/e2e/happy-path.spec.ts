@@ -64,7 +64,7 @@ test("fixture-backed analysis flow", async ({ page }) => {
   );
   await page.getByRole("button", { name: /accept as official match/i }).click();
   await expect(
-    page.getByText(/Local review override: Official Match/i),
+    page.getByText(/Review override: Official Match/i),
   ).toBeVisible();
   await page
     .getByRole("combobox", { name: /^Query family$/ })
