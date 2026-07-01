@@ -86,6 +86,7 @@ class PerceptionRun(BaseModel):
 
     schema_version: str = SCHEMA_VERSION
     run_id: str
+    analysis_run_id: str | None = None
     created_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     completed_at: datetime | None = None
     request: ProductAnalysisRequest

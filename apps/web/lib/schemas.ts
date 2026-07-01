@@ -521,6 +521,7 @@ export const providerRunTelemetrySchema = z.object({
 export const perceptionRunSchema = z.object({
   schema_version: z.string(),
   run_id: z.string(),
+  analysis_run_id: z.string().nullable().optional().default(null),
   created_at: z.string(),
   completed_at: z.string().nullable(),
   request: z.record(z.unknown()),
@@ -550,6 +551,120 @@ export const perceptionRunSchema = z.object({
   stage_statuses: z.array(z.record(z.unknown())),
   metadata: z.record(z.unknown()),
   provider_runs: z.array(providerRunTelemetrySchema).optional().default([]),
+});
+
+export const analysisSummarySchema = z.object({
+  analysis_id: z.string(),
+  run_id: z.string(),
+  created_at: z.string(),
+  completed_at: z.string().nullable(),
+  product_name: z.string().nullable(),
+  brand: z.string().nullable(),
+  status: z.string(),
+  marketplace_observation_count: z.number(),
+  validated_match_count: z.number(),
+  keyword_count: z.number(),
+  provider_status: z.string(),
+  duration_ms: z.number().nullable(),
+});
+
+export const analysisListResponseSchema = z.object({
+  items: z.array(analysisSummarySchema),
+  total: z.number(),
+  limit: z.number(),
+  offset: z.number(),
+});
+
+export const persistedProviderRunSchema = z.object({
+  id: z.string(),
+  provider_name: z.string(),
+  provider_type: z.string(),
+  operation: z.string(),
+  status: z.string(),
+  result_count: z.number().nullable(),
+  started_at: z.string(),
+  completed_at: z.string().nullable(),
+  latency_ms: z.number().nullable(),
+  estimated_cost_usd: z.number().nullable(),
+  actual_cost_usd: z.number().nullable(),
+  error_type: z.string().nullable(),
+  error_message: z.string().nullable(),
+  correlation_id: z.string().nullable(),
+});
+
+export const persistedMarketplaceObservationSchema = z.object({
+  id: z.string(),
+  provider_name: z.string(),
+  platform: z.string(),
+  listing_id: z.string(),
+  source_url: z.string().nullable(),
+  title: z.string(),
+  normalized_title: z.string(),
+  brand: z.string().nullable(),
+  manufacturer: z.string().nullable(),
+  model_number: z.string().nullable(),
+  condition: z.string().nullable(),
+  currency: z.string().nullable(),
+  item_price: z.number().nullable(),
+  landed_price: z.number().nullable(),
+  observed_at: z.string(),
+});
+
+export const persistedMatchResultSchema = z.object({
+  id: z.string(),
+  marketplace_observation_id: z.string(),
+  status: z.string(),
+  relationship: z.string(),
+  score: z.number(),
+  eligible_for_price_aggregation: z.boolean(),
+  aggregation_group: z.string().nullable(),
+  human_summary: z.string(),
+  matcher_version: z.string(),
+  created_at: z.string(),
+});
+
+export const persistedManualOverrideSchema = z.object({
+  id: z.string(),
+  marketplace_observation_id: z.string(),
+  listing_id: z.string(),
+  override_status: z.string(),
+  override_relationship: z.string().nullable(),
+  override_eligible_for_price_aggregation: z.boolean().nullable(),
+  reason: z.string().nullable(),
+  created_by: z.string().nullable(),
+  created_at: z.string(),
+});
+
+export const analysisDetailSchema = z.object({
+  summary: analysisSummarySchema,
+  product_profile: productProfileSchema.nullable(),
+  marketplace_snapshot: marketplaceSnapshotSchema.nullable(),
+  keyword_candidates: z.array(keywordCandidateSchema),
+  keyword_intelligence: keywordIntelligenceSchema.nullable(),
+  provider_runs: z.array(persistedProviderRunSchema),
+  marketplace_observations: z.array(persistedMarketplaceObservationSchema),
+  match_results: z.array(persistedMatchResultSchema),
+  manual_overrides: z.array(persistedManualOverrideSchema),
+  report: perceptionRunSchema.nullable(),
+});
+
+export const adminDbTableSummarySchema = z.object({
+  name: z.string(),
+  columns: z.array(z.string()),
+  record_count: z.number().nullable(),
+});
+
+export const adminDbTableListResponseSchema = z.object({
+  tables: z.array(adminDbTableSummarySchema),
+});
+
+export const adminDbTableRowsResponseSchema = z.object({
+  table_name: z.string(),
+  columns: z.array(z.string()),
+  rows: z.array(z.record(z.unknown())),
+  total: z.number(),
+  limit: z.number(),
+  offset: z.number(),
 });
 
 export const analysisFormSchema = z.object({
@@ -585,3 +700,20 @@ export type MarketplaceListingValidation = z.infer<
 export type MarketplaceSnapshot = z.infer<typeof marketplaceSnapshotSchema>;
 export type PerceptionRun = z.infer<typeof perceptionRunSchema>;
 export type AnalysisFormValues = z.infer<typeof analysisFormSchema>;
+export type AnalysisSummary = z.infer<typeof analysisSummarySchema>;
+export type AnalysisListResponse = z.infer<typeof analysisListResponseSchema>;
+export type AnalysisDetail = z.infer<typeof analysisDetailSchema>;
+export type PersistedProviderRun = z.infer<typeof persistedProviderRunSchema>;
+export type PersistedMarketplaceObservation = z.infer<
+  typeof persistedMarketplaceObservationSchema
+>;
+export type PersistedManualOverride = z.infer<
+  typeof persistedManualOverrideSchema
+>;
+export type AdminDbTableSummary = z.infer<typeof adminDbTableSummarySchema>;
+export type AdminDbTableListResponse = z.infer<
+  typeof adminDbTableListResponseSchema
+>;
+export type AdminDbTableRowsResponse = z.infer<
+  typeof adminDbTableRowsResponseSchema
+>;

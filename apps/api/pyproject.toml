@@ -5,6 +5,8 @@ description = "Product perception and keyword intelligence API"
 readme = "../../README.md"
 requires-python = ">=3.12,<3.13"
 dependencies = [
+  "alembic>=1.13.0",
+  "asyncpg>=0.29.0",
   "fastapi>=0.115.0",
   "httpx>=0.27.0",
   "openai>=1.84.0",
@@ -12,6 +14,7 @@ dependencies = [
   "pydantic>=2.8.0",
   "pydantic-settings>=2.4.0",
   "python-multipart>=0.0.9",
+  "sqlalchemy[asyncio]>=2.0.36",
   "typer>=0.12.0",
   "uvicorn[standard]>=0.30.0",
 ]
@@ -21,6 +24,7 @@ marketing-agent = "marketing_agent.cli:app"
 
 [dependency-groups]
 dev = [
+  "aiosqlite>=0.20.0",
   "asgi-lifespan>=2.1.0",
   "coverage>=7.6.0",
   "openapi-spec-validator>=0.7.1",
@@ -54,4 +58,3 @@ pythonVersion = "3.12"
 typeCheckingMode = "strict"
 venvPath = "."
 venv = ".venv"
-

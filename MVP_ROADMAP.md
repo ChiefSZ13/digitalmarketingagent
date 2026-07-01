@@ -89,9 +89,56 @@ Current limitations:
 - The cache is in-memory for MVP 1C development and tests; Redis is still deferred to MVP 2 if needed.
 - Opportunity scoring is transparent and deterministic, but not yet calibrated against campaign outcomes.
 
-## MVP 2 — Campaign Memory — Planned
+## MVP 2 — Campaign Memory — In Progress
 
 PostgreSQL versioned snapshots, object storage, prompt/model/cost/audit records, Redis for transient coordination.
+
+### MVP 2A — Persistent Product Intelligence Memory — In Progress
+
+Durable product-intelligence memory for analyses, marketplace validation, keyword
+intelligence, provider telemetry, and manual review decisions.
+
+Progress:
+
+- Added typed database settings for `DATABASE_URL`, pool sizing, database echo,
+  `PERSISTENCE_ENABLED`, and `ADMIN_DB_INSPECTOR_ENABLED`.
+- Added PostgreSQL local development through Docker Compose plus Make targets
+  for `db-up`, `db-down`, `db-migrate`, `db-reset`, `db-shell`, and
+  `seed-dev-data`.
+- Added SQLAlchemy async session management and Alembic migration wiring.
+- Added persistence tables for products, media assets, analysis runs, product
+  profile versions, provider runs, marketplace observations, product match
+  results, manual match overrides, keyword candidates, keyword metrics, and full
+  intelligence report snapshots.
+- Added a SQLAlchemy-backed analysis repository behind the existing
+  `ArtifactRepository` port. Domain matching, perception, keyword generation,
+  and provider normalization remain outside ORM models.
+- Product analysis responses now include `analysis_run_id` when a run is
+  created. With persistence enabled, completed runs are saved as versioned JSON
+  snapshots and normalized read rows.
+- Added persisted analysis APIs under `/api/v1/analyses` for listing, detail,
+  report export, marketplace snapshot retrieval, keyword retrieval, and
+  observation-level manual override audit records.
+- Added a read-only development database inspector under `/admin/db`, disabled
+  unless explicitly enabled.
+- Added frontend pages for `/analyses`, `/analyses/[id]`, and `/admin/db`.
+- Added seed data generation from the mock report fixture for completed and
+  partial-success analyses.
+- Added migration and persistence API tests covering analysis creation, history,
+  report reconstruction, manual override separation, disabled inspector, enabled
+  inspector, and Alembic upgrade.
+
+Current limitations:
+
+- The analysis pipeline is still synchronous; no background job queue or Redis
+  coordination is required yet.
+- Image bytes are not stored in PostgreSQL; only media metadata and content
+  hashes are persisted.
+- The inspector is a small read-only developer tool, not a production admin
+  console.
+- Full campaign memory, creative planning, publishing history, analytics, and
+  optimization memory remain future MVPs.
+- Object storage is still deferred until file persistence requires it.
 
 ## MVP 3 — Creative Planning — Planned
 

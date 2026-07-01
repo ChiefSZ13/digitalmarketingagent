@@ -17,6 +17,8 @@ flowchart LR
   MarketPort --> Matcher["Deterministic Product Matcher"]
   Pipeline --> RepoPort["ArtifactRepository Port"]
   RepoPort --> LocalJson["Local JSON Artifacts"]
+  RepoPort --> PostgresRepo["SQLAlchemy Analysis Repository"]
+  PostgresRepo --> Postgres["PostgreSQL"]
 ```
 
 ```mermaid
@@ -39,11 +41,21 @@ flowchart TD
   P --> Q["Classify intent and category"]
   Q --> R["Cluster candidates"]
   R --> S["Score candidates and clusters"]
-  S --> T["Persist immutable run artifact"]
+  S --> T["Persist immutable run artifact and normalized rows"]
   T --> U["Return JSON response"]
 ```
 
 Domain code does not import FastAPI, OpenAI SDKs, persistence SDKs, or vendor-specific keyword providers. Provider-specific logic lives under `apps/api/src/marketing_agent/infrastructure`.
+
+MVP 2A adds PostgreSQL as the durable source of truth when
+`PERSISTENCE_ENABLED=true`. The pipeline still depends on the
+`ArtifactRepository` port; the configured implementation either writes local
+JSON artifacts or persists through `SqlAlchemyAnalysisRepository`. The SQL
+repository stores versioned snapshots and normalized read rows for products,
+analysis runs, provider runs, marketplace observations, match results, manual
+overrides, keyword candidates, keyword metrics, and full report snapshots.
+Alembic owns schema creation. The admin DB inspector is a read-only development
+tool and is disabled unless explicitly enabled.
 
 Marketplace matching is deterministic-first. The provider adapters convert vendor
 payloads into `NormalizedMarketplaceListing` records, then the domain matcher

@@ -1,4 +1,4 @@
-.PHONY: install dev dev-api dev-web format lint typecheck typecheck-api typecheck-web test test-api test-web test-e2e test-unit test-integration test-evals evaluate-product-matcher evaluate-keyword-generation evaluate-keyword-enrichment smoke-test-marketplace-provider check openapi docker-up docker-down
+.PHONY: install dev dev-api dev-web format lint typecheck typecheck-api typecheck-web test test-api test-web test-e2e test-unit test-integration test-evals evaluate-product-matcher evaluate-keyword-generation evaluate-keyword-enrichment smoke-test-marketplace-provider check openapi docker-up docker-down db-up db-down db-migrate db-reset db-shell seed-dev-data
 
 API_DIR := apps/api
 WEB_DIR := apps/web
@@ -8,7 +8,8 @@ install:
 	cd $(WEB_DIR) && pnpm install
 
 dev:
-	@echo "Run 'make dev-api' and 'make dev-web' in separate shells."
+	@echo "Run 'make db-up db-migrate' first when PERSISTENCE_ENABLED=true."
+	@echo "Then run 'make dev-api' and 'make dev-web' in separate shells."
 
 dev-api:
 	cd $(API_DIR) && if [ -f ../../.env ]; then set -a; . ../../.env; set +a; fi; uv run uvicorn marketing_agent.main:app --reload --host "$${APP_HOST:-127.0.0.1}" --port "$${APP_PORT:-8000}"
@@ -74,3 +75,23 @@ docker-up:
 
 docker-down:
 	docker compose down
+
+db-up:
+	docker compose up -d postgres
+
+db-down:
+	docker compose stop postgres
+
+db-migrate:
+	cd $(API_DIR) && if [ -f ../../.env ]; then set -a; . ../../.env; set +a; fi; uv run alembic upgrade head
+
+db-reset:
+	docker compose down -v
+	docker compose up -d postgres
+	cd $(API_DIR) && if [ -f ../../.env ]; then set -a; . ../../.env; set +a; fi; uv run alembic upgrade head
+
+db-shell:
+	docker compose exec postgres psql -U postgres -d marketing_agent
+
+seed-dev-data:
+	cd $(API_DIR) && if [ -f ../../.env ]; then set -a; . ../../.env; set +a; fi; uv run python ../../scripts/seed_dev_data.py

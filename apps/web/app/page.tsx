@@ -5,6 +5,7 @@ import {
   QueryClientProvider,
   useMutation,
 } from "@tanstack/react-query";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { AnalysisProgress } from "@/components/analysis-progress";
 import { JsonExport } from "@/components/json-export";
@@ -99,7 +100,23 @@ function ProductPerceptionPage() {
     <main className="min-h-screen overflow-x-clip bg-white">
       <div className="mx-auto w-full max-w-7xl px-3 py-6 sm:px-6 lg:px-8">
         <header className="mb-6 border-b border-gray-200 pb-5">
-          <p className="text-sm font-medium text-accent-600">MVP 1C</p>
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm font-medium text-accent-600">MVP 2A</p>
+            <nav className="flex flex-wrap gap-2 text-sm">
+              <Link
+                className="rounded border border-gray-300 px-3 py-2 font-medium text-gray-800 hover:bg-gray-50"
+                href="/analyses"
+              >
+                Analysis history
+              </Link>
+              <Link
+                className="rounded border border-gray-300 px-3 py-2 font-medium text-gray-800 hover:bg-gray-50"
+                href="/admin/db"
+              >
+                DB inspector
+              </Link>
+            </nav>
+          </div>
           <h1 className="mt-1 text-2xl font-semibold tracking-normal text-gray-950 sm:text-3xl">
             Product Perception and Keyword Intelligence
           </h1>

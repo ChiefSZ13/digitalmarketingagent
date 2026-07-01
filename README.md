@@ -2,7 +2,7 @@
 
 This repository contains the first working slice of an agentic digital-marketing platform: a FastAPI backend, a Next.js frontend, deterministic mock providers, and a live OpenAI perception adapter kept behind a provider port.
 
-Current scope is MVP 0, MVP 1, MVP 1B, and the first MVP 1C live keyword-enrichment slice. Inside MVP 1, the app also includes a data-collection sub-track for Marketplace Snapshot: one to five product images and a description become an evidence-backed product profile, provider-backed marketplace and price observations, realistic search-query candidates, live-enriched keyword intelligence, keyword clusters, and browser-reviewable JSON export.
+Current scope is MVP 0, MVP 1, MVP 1B, MVP 1C, and the first MVP 2A persistent-memory slice. Inside MVP 1, the app also includes a data-collection sub-track for Marketplace Snapshot: one to five product images and a description become an evidence-backed product profile, provider-backed marketplace and price observations, realistic search-query candidates, live-enriched keyword intelligence, keyword clusters, browser-reviewable JSON export, and optional PostgreSQL-backed analysis history.
 
 ## Repository Layout
 
@@ -57,6 +57,12 @@ KEYWORD_PROVIDER_LOCATION_NAME=United States
 KEYWORD_PROVIDER_LANGUAGE=en
 KEYWORD_PROVIDER_LANGUAGE_NAME=English
 KEYWORD_PROVIDER_CURRENCY=USD
+DATABASE_URL=postgresql+asyncpg://postgres:postgres@localhost:5432/marketing_agent
+DATABASE_ECHO=false
+DATABASE_POOL_SIZE=5
+DATABASE_MAX_OVERFLOW=10
+PERSISTENCE_ENABLED=false
+ADMIN_DB_INSPECTOR_ENABLED=false
 PRODUCT_MATCHER_VERSION=product-matcher-v2
 PRODUCT_MATCH_EXACT_THRESHOLD=0.93
 PRODUCT_MATCH_PROBABLE_THRESHOLD=0.84
@@ -174,6 +180,34 @@ related provider terms, warnings, and methodology. Missing provider fields stay
 zero. Provider responses are cached by provider, normalized keyword, market,
 language, currency, and policy versions.
 
+MVP 2A persistent memory is controlled by `PERSISTENCE_ENABLED`. With the
+default `false`, runs continue to use local JSON artifacts under `ARTIFACT_DIR`.
+With `true`, the backend persists analysis runs, product/profile snapshots,
+provider runs, marketplace observations, match results, manual overrides,
+keyword candidates, keyword metrics, and full report snapshots to PostgreSQL.
+Manual overrides are stored separately from automated match results and raw
+observations, then applied as the latest effective review decision when reports
+are reopened.
+
+For local PostgreSQL:
+
+```bash
+make db-up
+make db-migrate
+make seed-dev-data
+```
+
+Then set:
+
+```bash
+PERSISTENCE_ENABLED=true
+ADMIN_DB_INSPECTOR_ENABLED=true
+```
+
+The inspector is a read-only development tool at `/admin/db`. Keep
+`ADMIN_DB_INSPECTOR_ENABLED=false` outside local development unless the backend
+is protected by an access key.
+
 For production, set `CORS_ALLOWED_ORIGINS` to the exact frontend origin. For
 example, the Render backend for the Vercel app should use:
 
@@ -230,6 +264,20 @@ http://127.0.0.1:3101
 If you change `.env`, stop and restart both terminals. Environment variables are
 read when each process starts.
 
+### Database Commands
+
+```bash
+make db-up          # start local Postgres
+make db-migrate     # run Alembic migrations
+make seed-dev-data  # insert completed and partial sample analyses
+make db-shell       # open psql
+make db-down        # stop local Postgres
+make db-reset       # remove volume, recreate database, rerun migrations
+```
+
+`docker-compose.yml` uses `postgres/postgres` and database
+`marketing_agent`, matching the default `DATABASE_URL`.
+
 ### Frontend Environment Notes
 
 When using `make dev-web`, the Makefile loads the root `.env`, so
@@ -268,7 +316,15 @@ curl -X POST http://127.0.0.1:8010/api/v1/perception-runs \
   -F "language=en-US"
 ```
 
-The response contains a `run_id`, product profile sections, marketplace snapshot, evidence records, keyword candidates, keyword intelligence, clusters, warnings, stage statuses, provider-run telemetry, and provider metadata.
+The response contains a `run_id`, optional `analysis_run_id`, product profile sections, marketplace snapshot, evidence records, keyword candidates, keyword intelligence, clusters, warnings, stage statuses, provider-run telemetry, and provider metadata.
+
+When persistence is enabled:
+
+```bash
+curl http://127.0.0.1:8010/api/v1/analyses
+curl http://127.0.0.1:8010/api/v1/analyses/{analysis_run_id}/report
+curl http://127.0.0.1:8010/admin/db/tables
+```
 
 ## CLI Example
 
@@ -299,11 +355,17 @@ make check
 
 ## Frontend Workflow
 
-The single-page UI supports image upload, previews, image removal, required description validation, optional metadata, pending/error/success states, product profile review, marketplace snapshot review with persisted manual overrides, keyword cluster cards, search-query family filtering, query-realism filtering, live keyword-intelligence filtering, expandable metric details, missing-metric labeling, and JSON copy/download.
+The main UI supports image upload, previews, image removal, required description validation, optional metadata, pending/error/success states, product profile review, marketplace snapshot review with persisted manual overrides, keyword cluster cards, search-query family filtering, query-realism filtering, live keyword-intelligence filtering, expandable metric details, missing-metric labeling, and JSON copy/download.
+
+MVP 2A adds:
+
+- `/analyses`: persisted analysis history with open, copy ID, and export JSON actions.
+- `/analyses/[id]`: persisted report detail with overview, product profile, marketplace, keywords, provider runs, evidence, and raw JSON tabs.
+- `/admin/db`: read-only development database inspector when explicitly enabled.
 
 ## Architecture
 
-The backend is a modular monolith. Domain code defines Pydantic models and pure services. Application orchestration coordinates the pipeline through ports. Infrastructure implements the mock perception provider, OpenAI perception provider, mock marketplace provider, SerpAPI marketplace provider, mock/null/DataForSEO keyword metrics providers, in-memory keyword metric cache, image validation, and local artifact repository. API routes map HTTP requests to the same pipeline used by the CLI.
+The backend is a modular monolith. Domain code defines Pydantic models and pure services. Application orchestration coordinates the pipeline through ports. Infrastructure implements the mock perception provider, OpenAI perception provider, mock marketplace provider, SerpAPI marketplace provider, mock/null/DataForSEO keyword metrics providers, in-memory keyword metric cache, image validation, local artifact repository, and SQLAlchemy-backed analysis repository. API routes map HTTP requests to the same pipeline used by the CLI. Alembic owns the PostgreSQL schema.
 
 ## Limitations
 
@@ -312,7 +374,9 @@ The backend is a modular monolith. Domain code defines Pydantic models and pure 
 - Mock Marketplace Snapshot is deterministic fixture data for local development and CI, not market evidence.
 - DataForSEO-backed keyword enrichment depends on provider account access and approximate market/language metrics; mock keyword enrichment is fixture data, not market evidence.
 - Keyword generation is deterministic query synthesis. Live enrichment can add approximate market signals, but it is not proof of exact demand.
-- PostgreSQL and Redis are optional future infrastructure only, not part of the MVP 1 runtime.
+- PostgreSQL is optional unless `PERSISTENCE_ENABLED=true`; local JSON artifacts remain the default fallback.
+- Redis remains optional future infrastructure and is not required by MVP 2A.
+- The admin DB inspector is intentionally small, read-only, and development-gated; it is not a production admin console.
 - No authentication, publishing, ad-budget control, video generation, search-engine scraping, or autonomous optimization is included.
 
 ## Recommended Next Task

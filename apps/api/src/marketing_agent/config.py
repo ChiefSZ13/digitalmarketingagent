@@ -72,6 +72,12 @@ class Settings(BaseSettings):
     max_image_pixels: int = Field(default=12_000_000, gt=0)
     max_images_per_request: int = Field(default=5, gt=0, le=5)
     artifact_dir: Path = Path("artifacts/runs")
+    database_url: str = "postgresql+asyncpg://postgres:postgres@localhost:5432/marketing_agent"
+    database_echo: bool = False
+    database_pool_size: int = Field(default=5, gt=0)
+    database_max_overflow: int = Field(default=10, ge=0)
+    persistence_enabled: bool = False
+    admin_db_inspector_enabled: bool = False
 
     @property
     def is_production(self) -> bool:

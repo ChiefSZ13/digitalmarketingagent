@@ -7,13 +7,32 @@ from pathlib import Path
 from typing import Any, cast
 
 from marketing_agent.domain.models.marketplace import MarketplaceReviewOverride
-from marketing_agent.domain.models.run import PerceptionRun
+from marketing_agent.domain.models.run import ImageInput, PerceptionRun, ProductAnalysisRequest
 from marketing_agent.domain.ports.artifact_repository import ArtifactRepository
 
 
 class LocalArtifactRepository(ArtifactRepository):
     def __init__(self, artifact_dir: Path) -> None:
         self.artifact_dir = artifact_dir
+
+    async def start_analysis_run(
+        self,
+        *,
+        run_id: str,
+        analysis_run_id: str,
+        request: ProductAnalysisRequest,
+        images: list[ImageInput],
+    ) -> None:
+        _ = (run_id, analysis_run_id, request, images)
+
+    async def mark_analysis_failed(
+        self,
+        *,
+        run_id: str,
+        analysis_run_id: str,
+        error_message: str,
+    ) -> None:
+        _ = (run_id, analysis_run_id, error_message)
 
     async def save_run(self, run: PerceptionRun) -> None:
         self.artifact_dir.mkdir(parents=True, exist_ok=True)
