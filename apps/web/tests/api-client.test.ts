@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createPerceptionRun, saveMarketplaceOverride } from "@/lib/api-client";
+import {
+  createPerceptionRun,
+  listAdminDbRows,
+  listAnalyses,
+  saveMarketplaceOverride,
+} from "@/lib/api-client";
 import fixture from "../public/fixtures/mock-run.json";
 
 describe("createPerceptionRun", () => {
@@ -80,5 +85,85 @@ describe("createPerceptionRun", () => {
       listing_id: "listing-1",
       decision: "official_match",
     });
+  });
+
+  it("lists persisted analyses with access key and search params", async () => {
+    const fetchMock = vi.fn<typeof fetch>(
+      async () =>
+        new Response(
+          JSON.stringify({
+            items: [
+              {
+                analysis_id: "analysis-1",
+                run_id: "run_123",
+                created_at: "2026-06-30T00:00:00Z",
+                completed_at: "2026-06-30T00:00:01Z",
+                product_name: "Portable lamp",
+                brand: "Acme",
+                status: "completed",
+                marketplace_observation_count: 10,
+                validated_match_count: 4,
+                keyword_count: 20,
+                provider_status: "success",
+                duration_ms: 1000,
+              },
+            ],
+            total: 1,
+            limit: 10,
+            offset: 0,
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await listAnalyses({
+      accessKey: "secret",
+      limit: 10,
+      search: "lamp",
+    });
+
+    expect(response.items[0]?.analysis_id).toBe("analysis-1");
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
+      "/api/v1/analyses?limit=10&offset=0&search=lamp",
+    );
+    expect(fetchMock.mock.calls[0]?.[1]?.headers).toEqual({
+      "X-App-Access-Key": "secret",
+    });
+  });
+
+  it("lists admin database rows with pagination params", async () => {
+    const fetchMock = vi.fn<typeof fetch>(
+      async () =>
+        new Response(
+          JSON.stringify({
+            table_name: "analysis_runs",
+            columns: ["id", "status"],
+            rows: [{ id: "analysis-1", status: "completed" }],
+            total: 1,
+            limit: 25,
+            offset: 0,
+          }),
+          {
+            status: 200,
+            headers: { "content-type": "application/json" },
+          },
+        ),
+    );
+    vi.stubGlobal("fetch", fetchMock);
+
+    const response = await listAdminDbRows({
+      tableName: "analysis_runs",
+      accessKey: "secret",
+      search: "completed",
+    });
+
+    expect(response.rows[0]?.status).toBe("completed");
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain(
+      "/admin/db/tables/analysis_runs?limit=25&offset=0&search=completed",
+    );
   });
 });

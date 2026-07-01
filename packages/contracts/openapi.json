@@ -239,10 +239,1176 @@
           }
         }
       }
+    },
+    "/api/v1/analyses": {
+      "get": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "List Analyses",
+        "operationId": "list_analyses_api_v1_analyses_get",
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Status"
+            }
+          },
+          {
+            "name": "product_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Product Id"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "created_after",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Created After"
+            }
+          },
+          {
+            "name": "created_before",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "format": "date-time"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Created Before"
+            }
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "default": "-created_at",
+              "title": "Sort"
+            }
+          },
+          {
+            "name": "X-App-Access-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-App-Access-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyses/{analysis_id}": {
+      "get": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "Get Analysis Detail",
+        "operationId": "get_analysis_detail_api_v1_analyses__analysis_id__get",
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analysis Id"
+            }
+          },
+          {
+            "name": "X-App-Access-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-App-Access-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AnalysisDetail"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyses/{analysis_id}/report": {
+      "get": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "Get Analysis Report",
+        "operationId": "get_analysis_report_api_v1_analyses__analysis_id__report_get",
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analysis Id"
+            }
+          },
+          {
+            "name": "X-App-Access-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-App-Access-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PerceptionRun"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyses/{analysis_id}/marketplace": {
+      "get": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "Get Analysis Marketplace",
+        "operationId": "get_analysis_marketplace_api_v1_analyses__analysis_id__marketplace_get",
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analysis Id"
+            }
+          },
+          {
+            "name": "X-App-Access-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-App-Access-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketplaceSnapshot"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyses/{analysis_id}/keywords": {
+      "get": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "Get Analysis Keywords",
+        "operationId": "get_analysis_keywords_api_v1_analyses__analysis_id__keywords_get",
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analysis Id"
+            }
+          },
+          {
+            "name": "X-App-Access-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-App-Access-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": {
+                    "anyOf": [
+                      {
+                        "type": "array",
+                        "items": {
+                          "$ref": "#/components/schemas/KeywordCandidate"
+                        }
+                      },
+                      {
+                        "$ref": "#/components/schemas/KeywordIntelligence"
+                      }
+                    ]
+                  },
+                  "title": "Response Get Analysis Keywords Api V1 Analyses  Analysis Id  Keywords Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyses/{analysis_id}/marketplace/{observation_id}/override": {
+      "post": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "Create Marketplace Observation Override",
+        "operationId": "create_marketplace_observation_override_api_v1_analyses__analysis_id__marketplace__observation_id__override_post",
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analysis Id"
+            }
+          },
+          {
+            "name": "observation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Observation Id"
+            }
+          },
+          {
+            "name": "X-App-Access-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-App-Access-Key"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AnalysisMarketplaceOverrideInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ManualMatchOverrideRecordView"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/analyses/{analysis_id}/marketplace/{observation_id}/overrides": {
+      "get": {
+        "tags": [
+          "analyses"
+        ],
+        "summary": "List Marketplace Observation Overrides",
+        "operationId": "list_marketplace_observation_overrides_api_v1_analyses__analysis_id__marketplace__observation_id__overrides_get",
+        "parameters": [
+          {
+            "name": "analysis_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Analysis Id"
+            }
+          },
+          {
+            "name": "observation_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Observation Id"
+            }
+          },
+          {
+            "name": "X-App-Access-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-App-Access-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/ManualMatchOverrideRecordView"
+                  },
+                  "title": "Response List Marketplace Observation Overrides Api V1 Analyses  Analysis Id  Marketplace  Observation Id  Overrides Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/db/tables": {
+      "get": {
+        "tags": [
+          "admin-db"
+        ],
+        "summary": "List Database Tables",
+        "operationId": "list_database_tables_admin_db_tables_get",
+        "parameters": [
+          {
+            "name": "X-App-Access-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-App-Access-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDbTableListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/db/tables/{table_name}": {
+      "get": {
+        "tags": [
+          "admin-db"
+        ],
+        "summary": "List Database Table Rows",
+        "operationId": "list_database_table_rows_admin_db_tables__table_name__get",
+        "parameters": [
+          {
+            "name": "table_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Table Name"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 25,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0,
+              "title": "Offset"
+            }
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 200
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Search"
+            }
+          },
+          {
+            "name": "X-App-Access-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-App-Access-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDbTableRowsResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/admin/db/tables/{table_name}/{record_id}": {
+      "get": {
+        "tags": [
+          "admin-db"
+        ],
+        "summary": "Get Database Record",
+        "operationId": "get_database_record_admin_db_tables__table_name___record_id__get",
+        "parameters": [
+          {
+            "name": "table_name",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Table Name"
+            }
+          },
+          {
+            "name": "record_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Record Id"
+            }
+          },
+          {
+            "name": "X-App-Access-Key",
+            "in": "header",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "X-App-Access-Key"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDbRecordResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
     "schemas": {
+      "AdminDbRecordResponse": {
+        "properties": {
+          "table_name": {
+            "type": "string",
+            "title": "Table Name"
+          },
+          "record": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Record"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "table_name",
+          "record"
+        ],
+        "title": "AdminDbRecordResponse"
+      },
+      "AdminDbTableListResponse": {
+        "properties": {
+          "tables": {
+            "items": {
+              "$ref": "#/components/schemas/AdminDbTableSummary"
+            },
+            "type": "array",
+            "title": "Tables"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "tables"
+        ],
+        "title": "AdminDbTableListResponse"
+      },
+      "AdminDbTableRowsResponse": {
+        "properties": {
+          "table_name": {
+            "type": "string",
+            "title": "Table Name"
+          },
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Columns"
+          },
+          "rows": {
+            "items": {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            "type": "array",
+            "title": "Rows"
+          },
+          "total": {
+            "type": "integer",
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "title": "Offset"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "table_name",
+          "columns",
+          "rows",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "AdminDbTableRowsResponse"
+      },
+      "AdminDbTableSummary": {
+        "properties": {
+          "name": {
+            "type": "string",
+            "title": "Name"
+          },
+          "columns": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Columns"
+          },
+          "record_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Record Count"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "name",
+          "columns"
+        ],
+        "title": "AdminDbTableSummary"
+      },
+      "AnalysisDetail": {
+        "properties": {
+          "summary": {
+            "$ref": "#/components/schemas/AnalysisSummary"
+          },
+          "product_profile": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/ProductProfile"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "marketplace_snapshot": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/MarketplaceSnapshot"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "keyword_candidates": {
+            "items": {
+              "$ref": "#/components/schemas/KeywordCandidate"
+            },
+            "type": "array",
+            "title": "Keyword Candidates"
+          },
+          "keyword_intelligence": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/KeywordIntelligence"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "provider_runs": {
+            "items": {
+              "$ref": "#/components/schemas/ProviderRunRecord"
+            },
+            "type": "array",
+            "title": "Provider Runs"
+          },
+          "marketplace_observations": {
+            "items": {
+              "$ref": "#/components/schemas/MarketplaceObservationRecord"
+            },
+            "type": "array",
+            "title": "Marketplace Observations"
+          },
+          "match_results": {
+            "items": {
+              "$ref": "#/components/schemas/ProductMatchResultRecordView"
+            },
+            "type": "array",
+            "title": "Match Results"
+          },
+          "manual_overrides": {
+            "items": {
+              "$ref": "#/components/schemas/ManualMatchOverrideRecordView"
+            },
+            "type": "array",
+            "title": "Manual Overrides"
+          },
+          "report": {
+            "anyOf": [
+              {
+                "$ref": "#/components/schemas/PerceptionRun"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "summary"
+        ],
+        "title": "AnalysisDetail"
+      },
+      "AnalysisListResponse": {
+        "properties": {
+          "items": {
+            "items": {
+              "$ref": "#/components/schemas/AnalysisSummary"
+            },
+            "type": "array",
+            "title": "Items"
+          },
+          "total": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Total"
+          },
+          "limit": {
+            "type": "integer",
+            "exclusiveMinimum": 0.0,
+            "title": "Limit"
+          },
+          "offset": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Offset"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "items",
+          "total",
+          "limit",
+          "offset"
+        ],
+        "title": "AnalysisListResponse"
+      },
+      "AnalysisMarketplaceOverrideInput": {
+        "properties": {
+          "override_status": {
+            "$ref": "#/components/schemas/MarketplaceReviewDecision"
+          },
+          "override_relationship": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Relationship"
+          },
+          "override_eligible_for_price_aggregation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Eligible For Price Aggregation"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "created_by": {
+            "type": "string",
+            "maxLength": 80,
+            "minLength": 1,
+            "title": "Created By",
+            "default": "manual"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "override_status"
+        ],
+        "title": "AnalysisMarketplaceOverrideInput"
+      },
+      "AnalysisSummary": {
+        "properties": {
+          "analysis_id": {
+            "type": "string",
+            "title": "Analysis Id"
+          },
+          "run_id": {
+            "type": "string",
+            "title": "Run Id"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "product_name": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Product Name"
+          },
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "marketplace_observation_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Marketplace Observation Count"
+          },
+          "validated_match_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Validated Match Count"
+          },
+          "keyword_count": {
+            "type": "integer",
+            "minimum": 0.0,
+            "title": "Keyword Count"
+          },
+          "provider_status": {
+            "type": "string",
+            "title": "Provider Status",
+            "default": "none"
+          },
+          "duration_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Duration Ms"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "analysis_id",
+          "run_id",
+          "created_at",
+          "status",
+          "marketplace_observation_count",
+          "validated_match_count",
+          "keyword_count"
+        ],
+        "title": "AnalysisSummary"
+      },
       "Body_create_perception_run_api_v1_perception_runs_post": {
         "properties": {
           "images": {
@@ -1755,6 +2921,86 @@
         ],
         "title": "KeywordTrendDirection"
       },
+      "ManualMatchOverrideRecordView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "marketplace_observation_id": {
+            "type": "string",
+            "title": "Marketplace Observation Id"
+          },
+          "listing_id": {
+            "type": "string",
+            "title": "Listing Id"
+          },
+          "override_status": {
+            "type": "string",
+            "title": "Override Status"
+          },
+          "override_relationship": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Relationship"
+          },
+          "override_eligible_for_price_aggregation": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Override Eligible For Price Aggregation"
+          },
+          "reason": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Reason"
+          },
+          "created_by": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Created By"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "marketplace_observation_id",
+          "listing_id",
+          "override_status",
+          "created_at"
+        ],
+        "title": "ManualMatchOverrideRecordView"
+      },
       "MarketingTermType": {
         "type": "string",
         "enum": [
@@ -1792,6 +3038,139 @@
           "match_result"
         ],
         "title": "MarketplaceListingValidation"
+      },
+      "MarketplaceObservationRecord": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "provider_name": {
+            "type": "string",
+            "title": "Provider Name"
+          },
+          "platform": {
+            "type": "string",
+            "title": "Platform"
+          },
+          "listing_id": {
+            "type": "string",
+            "title": "Listing Id"
+          },
+          "source_url": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Source Url"
+          },
+          "title": {
+            "type": "string",
+            "title": "Title"
+          },
+          "normalized_title": {
+            "type": "string",
+            "title": "Normalized Title"
+          },
+          "brand": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Brand"
+          },
+          "manufacturer": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Manufacturer"
+          },
+          "model_number": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model Number"
+          },
+          "condition": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Condition"
+          },
+          "currency": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Currency"
+          },
+          "item_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Item Price"
+          },
+          "landed_price": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Landed Price"
+          },
+          "observed_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Observed At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "provider_name",
+          "platform",
+          "listing_id",
+          "title",
+          "normalized_title",
+          "observed_at"
+        ],
+        "title": "MarketplaceObservationRecord"
       },
       "MarketplacePlatformEstimate": {
         "properties": {
@@ -3284,6 +4663,17 @@
             "type": "string",
             "title": "Run Id"
           },
+          "analysis_run_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Analysis Run Id"
+          },
           "created_at": {
             "type": "string",
             "format": "date-time",
@@ -3882,6 +5272,72 @@
         ],
         "title": "ProductMatchResult"
       },
+      "ProductMatchResultRecordView": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "marketplace_observation_id": {
+            "type": "string",
+            "title": "Marketplace Observation Id"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "relationship": {
+            "type": "string",
+            "title": "Relationship"
+          },
+          "score": {
+            "type": "number",
+            "title": "Score"
+          },
+          "eligible_for_price_aggregation": {
+            "type": "boolean",
+            "title": "Eligible For Price Aggregation"
+          },
+          "aggregation_group": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Aggregation Group"
+          },
+          "human_summary": {
+            "type": "string",
+            "title": "Human Summary"
+          },
+          "matcher_version": {
+            "type": "string",
+            "title": "Matcher Version"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Created At"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "marketplace_observation_id",
+          "status",
+          "relationship",
+          "score",
+          "eligible_for_price_aggregation",
+          "human_summary",
+          "matcher_version",
+          "created_at"
+        ],
+        "title": "ProductMatchResultRecordView"
+      },
       "ProductMatchStatus": {
         "type": "string",
         "enum": [
@@ -4164,6 +5620,135 @@
           "prompt_version"
         ],
         "title": "ProviderMetadata"
+      },
+      "ProviderRunRecord": {
+        "properties": {
+          "id": {
+            "type": "string",
+            "title": "Id"
+          },
+          "provider_name": {
+            "type": "string",
+            "title": "Provider Name"
+          },
+          "provider_type": {
+            "type": "string",
+            "title": "Provider Type"
+          },
+          "operation": {
+            "type": "string",
+            "title": "Operation"
+          },
+          "status": {
+            "type": "string",
+            "title": "Status"
+          },
+          "result_count": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Result Count"
+          },
+          "started_at": {
+            "type": "string",
+            "format": "date-time",
+            "title": "Started At"
+          },
+          "completed_at": {
+            "anyOf": [
+              {
+                "type": "string",
+                "format": "date-time"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Completed At"
+          },
+          "latency_ms": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Latency Ms"
+          },
+          "estimated_cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Estimated Cost Usd"
+          },
+          "actual_cost_usd": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Actual Cost Usd"
+          },
+          "error_type": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Type"
+          },
+          "error_message": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Message"
+          },
+          "correlation_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Correlation Id"
+          }
+        },
+        "additionalProperties": false,
+        "type": "object",
+        "required": [
+          "id",
+          "provider_name",
+          "provider_type",
+          "operation",
+          "status",
+          "started_at"
+        ],
+        "title": "ProviderRunRecord"
       },
       "ProviderRunStatus": {
         "type": "string",

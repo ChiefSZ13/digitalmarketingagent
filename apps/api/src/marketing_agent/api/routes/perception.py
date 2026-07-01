@@ -111,15 +111,23 @@ async def upsert_marketplace_override(
             status_code=404,
             type_="https://example.local/errors/not-found",
         )
-    return await repository.save_marketplace_override(
-        MarketplaceReviewOverride(
-            run_id=run_id,
-            listing_id=payload.listing_id,
-            decision=payload.decision,
-            note=payload.note,
-            reviewer=payload.reviewer,
+    try:
+        return await repository.save_marketplace_override(
+            MarketplaceReviewOverride(
+                run_id=run_id,
+                listing_id=payload.listing_id,
+                decision=payload.decision,
+                note=payload.note,
+                reviewer=payload.reviewer,
+            )
         )
-    )
+    except ValueError as exc:
+        raise ProblemException(
+            title="Marketplace override could not be saved",
+            detail=str(exc),
+            status_code=404,
+            type_="https://example.local/errors/not-found",
+        ) from exc
 
 
 def _blank_to_none(value: str | None) -> str | None:

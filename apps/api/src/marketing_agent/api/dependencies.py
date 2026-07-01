@@ -15,6 +15,7 @@ from marketing_agent.domain.ports.perception_provider import PerceptionProvider
 from marketing_agent.domain.services.product_matcher import ProductMatcherConfig
 from marketing_agent.infrastructure.ai.mock_perception_provider import MockPerceptionProvider
 from marketing_agent.infrastructure.ai.openai_perception_provider import OpenAIPerceptionProvider
+from marketing_agent.infrastructure.database.session import get_database_sessionmaker_cached
 from marketing_agent.infrastructure.keyword_data.dataforseo_keyword_metrics_provider import (
     DataForSeoKeywordMetricsProvider,
 )
@@ -36,6 +37,9 @@ from marketing_agent.infrastructure.marketplace.serpapi_marketplace_data_provide
 from marketing_agent.infrastructure.persistence.local_artifact_repository import (
     LocalArtifactRepository,
 )
+from marketing_agent.infrastructure.persistence.sqlalchemy_analysis_repository import (
+    SqlAlchemyAnalysisRepository,
+)
 
 
 @lru_cache
@@ -43,6 +47,17 @@ def get_repository_cached(artifact_dir: str) -> LocalArtifactRepository:
     from pathlib import Path
 
     return LocalArtifactRepository(Path(artifact_dir))
+
+
+@lru_cache
+def get_sqlalchemy_repository_cached(
+    database_url: str,
+    echo: bool,
+    pool_size: int,
+    max_overflow: int,
+) -> SqlAlchemyAnalysisRepository:
+    sessionmaker = get_database_sessionmaker_cached(database_url, echo, pool_size, max_overflow)
+    return SqlAlchemyAnalysisRepository(sessionmaker)
 
 
 @lru_cache
@@ -54,7 +69,23 @@ SettingsDep = Annotated[Settings, Depends(get_settings)]
 
 
 def get_repository(settings: SettingsDep) -> ArtifactRepository:
+    if settings.persistence_enabled:
+        return get_sqlalchemy_repository_cached(
+            settings.database_url,
+            settings.database_echo,
+            settings.database_pool_size,
+            settings.database_max_overflow,
+        )
     return get_repository_cached(str(settings.artifact_dir))
+
+
+def get_analysis_repository(settings: SettingsDep) -> SqlAlchemyAnalysisRepository:
+    return get_sqlalchemy_repository_cached(
+        settings.database_url,
+        settings.database_echo,
+        settings.database_pool_size,
+        settings.database_max_overflow,
+    )
 
 
 def get_provider(settings: SettingsDep) -> PerceptionProvider:

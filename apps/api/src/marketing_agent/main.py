@@ -18,6 +18,8 @@ from marketing_agent.api.errors import (
     provider_exception_handler,
     request_validation_exception_handler,
 )
+from marketing_agent.api.routes.admin_db import router as admin_db_router
+from marketing_agent.api.routes.analyses import router as analyses_router
 from marketing_agent.api.routes.health import router as health_router
 from marketing_agent.api.routes.perception import router as perception_router
 from marketing_agent.config import get_settings
@@ -55,6 +57,8 @@ def create_app() -> FastAPI:
 
     app.include_router(health_router)
     app.include_router(perception_router)
+    app.include_router(analyses_router)
+    app.include_router(admin_db_router)
     _ = add_request_id
     app.add_exception_handler(ProblemException, cast(ExceptionHandler, problem_exception_handler))
     app.add_exception_handler(
