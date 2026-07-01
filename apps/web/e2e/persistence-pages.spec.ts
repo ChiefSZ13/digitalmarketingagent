@@ -9,16 +9,21 @@ test("fixture-backed persisted analysis pages render", async ({ page }) => {
 
   await page.getByRole("link", { name: "Open" }).click();
   await expect(
-    page.getByRole("heading", { name: "Portable Rechargeable Desk Lamp" }),
+    page.getByRole("heading", {
+      name: "Portable Rechargeable Desk Lamp",
+      level: 1,
+    }),
   ).toBeVisible();
 
-  await page.getByRole("button", { name: "Provider Runs" }).click();
+  await page.getByRole("button", { name: "Providers" }).click();
   await expect(
     page.getByRole("columnheader", { name: "Provider" }),
   ).toBeVisible();
-  await expect(page.getByText("mock", { exact: true }).first()).toBeVisible();
+  await expect(
+    page.getByRole("columnheader", { name: "Operation" }),
+  ).toBeVisible();
 
-  await page.getByRole("button", { name: "Raw Json" }).click();
+  await page.getByRole("button", { name: "Json" }).click();
   await expect(
     page.getByRole("heading", { name: "JSON export" }),
   ).toBeVisible();
